@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkmarvel_fitt=self.webpackChunkmarvel_fitt||[]).push([[180],{44725(e){e.exports=void 0}},e=>{e.O(0,[912],()=>e(59912)),e.O()}]);

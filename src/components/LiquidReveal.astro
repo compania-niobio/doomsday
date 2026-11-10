@@ -1,0 +1,222 @@
+---
+/**
+ * LiquidReveal — hero com hover líquido.
+ * Imagem A (base): retrato de terno. Imagem B (revelada): retrato de capuz.
+ * Para trocar as fotos, altere os imports abaixo (mantenha a mesma proporção entre A e B).
+ */
+import bg300 from '../assets/overlay-background/retrato-terno-responsivo/background-300.webp';
+import bg600 from '../assets/overlay-background/retrato-terno-responsivo/background-600.webp';
+import bg1200 from '../assets/overlay-background/retrato-terno-responsivo/background-1200.webp';
+import ov300 from '../assets/overlay-background/retrato-capuz-responsivo/overlay-300.webp';
+import ov600 from '../assets/overlay-background/retrato-capuz-responsivo/overlay-600.webp';
+import ov1200 from '../assets/overlay-background/retrato-capuz-responsivo/overlay-1200.webp';
+
+interface Props {
+  hint?: string;
+  label?: string;
+}
+
+const {
+  hint = 'Mova o cursor para revelar',
+  label = 'Retrato de um homem de terno preto. Ao passar o cursor, uma gota líquida revela por baixo a mesma figura vestindo a máscara de metal e o capuz verde de Doutor Destino.',
+} = Astro.props;
+
+const variantsA = [
+  { w: bg300.width, src: bg300.src },
+  { w: bg600.width, src: bg600.src },
+  { w: bg1200.width, src: bg1200.src },
+];
+const variantsB = [
+  { w: ov300.width, src: ov300.src },
+  { w: ov600.width, src: ov600.src },
+  { w: ov1200.width, src: ov1200.src },
+];
+const imageRatio = bg1200.width / bg1200.height;
+---
+
+<section class="lr-hero" aria-label="Revelação líquida">
+  <div
+    class="lr-stage"
+    data-liquid-reveal
+    data-variants-a={JSON.stringify(variantsA)}
+    data-variants-b={JSON.stringify(variantsB)}
+    data-image-ratio={imageRatio}
+    style={`--lr-ratio: ${imageRatio}`}
+  >
+    <canvas class="lr-canvas" role="img" aria-label={label}></canvas>
+    <noscript>
+      <img class="lr-noscript" src={bg1200.src} alt={label} width={bg1200.width} height={bg1200.height} />
+    </noscript>
+
+    <div class="lr-content">
+      <slot />
+      <p class="lr-hint" aria-hidden="true">{hint}</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .lr-hero {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+    background: #141414;
+  }
+
+  /* Esmaece as laterais do retrato no fundo em telas largas (some no mobile) */
+  .lr-stage::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+      to right,
+      #141414 0%,
+      rgba(20, 20, 20, 0) 14%,
+      rgba(20, 20, 20, 0) 86%,
+      #141414 100%
+    );
+  }
+
+  /* O palco segue a proporção 2:3 das fotos: em telas largas o rosto não é
+     cortado pelo "cover"; em telas estreitas ele ocupa a largura toda. */
+  .lr-stage {
+    position: relative;
+    height: 100%;
+    aspect-ratio: var(--lr-ratio, 0.6667);
+    max-width: 100%;
+    overflow: hidden;
+    touch-action: pan-y;
+  }
+
+  @media (max-aspect-ratio: 2/3) {
+    .lr-stage {
+      width: 100%;
+      aspect-ratio: auto;
+    }
+
+    .lr-stage::after {
+      display: none;
+    }
+  }
+
+  .lr-canvas,
+  .lr-noscript {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .lr-noscript {
+    object-fit: cover;
+  }
+
+  .lr-content {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none; /* senão o overlay engole o mousemove e a gota congela */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 16px 6svh;
+    color: #fff;
+  }
+
+  .lr-hint {
+    margin: 0;
+    font: 600 0.75rem/1 system-ui, sans-serif;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    text-align: center;
+    opacity: 0.75;
+    transition: opacity 0.5s ease;
+    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.6);
+  }
+
+  .lr-stage.is-hovered .lr-hint {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lr-hint {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import { LiquidReveal } from '../scripts/liquid-reveal';
+
+  type Variant = { w: number; src: string };
+
+  const instances = new Map<HTMLElement, { engine: LiquidReveal; cleanup: () => void }>();
+
+  /** Menor variante que cobre o palco no DPR atual (com teto de 2, igual ao motor). */
+  function pickVariant(variants: Variant[], stage: HTMLElement, ratio: number): string {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // Largura de imagem necessária para "cover": a maior entre largura e altura×proporção
+    const needed = Math.max(stage.clientWidth, stage.clientHeight * ratio) * dpr;
+    const sorted = [...variants].sort((a, b) => a.w - b.w);
+    return (sorted.find((v) => v.w >= needed) ?? sorted[sorted.length - 1]).src;
+  }
+
+  function mount() {
+    document.querySelectorAll<HTMLElement>('[data-liquid-reveal]').forEach((stage) => {
+      if (instances.has(stage)) return;
+      const canvas = stage.querySelector<HTMLCanvasElement>('canvas');
+      if (!canvas) return;
+
+      const ratio = Number(stage.dataset.imageRatio) || 2 / 3;
+      const variantsA: Variant[] = JSON.parse(stage.dataset.variantsA ?? '[]');
+      const variantsB: Variant[] = JSON.parse(stage.dataset.variantsB ?? '[]');
+
+      const engine = new LiquidReveal({
+        canvas,
+        container: stage,
+        imageAUrl: pickVariant(variantsA, stage, ratio),
+        imageBUrl: pickVariant(variantsB, stage, ratio),
+      });
+
+      // Hint: some no enter, volta no leave
+      const on = () => stage.classList.add('is-hovered');
+      const off = () => stage.classList.remove('is-hovered');
+      const opts = { passive: true };
+      stage.addEventListener('mouseenter', on, opts);
+      stage.addEventListener('touchstart', on, opts);
+      stage.addEventListener('mouseleave', off, opts);
+      stage.addEventListener('touchend', off, opts);
+
+      instances.set(stage, {
+        engine,
+        cleanup: () => {
+          stage.removeEventListener('mouseenter', on);
+          stage.removeEventListener('touchstart', on);
+          stage.removeEventListener('mouseleave', off);
+          stage.removeEventListener('touchend', off);
+        },
+      });
+    });
+  }
+
+  function unmountAll() {
+    instances.forEach(({ engine, cleanup }) => {
+      engine.destroy();
+      cleanup();
+    });
+    instances.clear();
+  }
+
+  mount();
+  // Compatível com <ClientRouter /> (view transitions), se for adicionado depois
+  document.addEventListener('astro:page-load', mount);
+  document.addEventListener('astro:before-swap', unmountAll);
+</script>

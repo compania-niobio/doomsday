@@ -1,0 +1,10 @@
+2:I[19107,[],"ClientPageRoot"]
+3:I[56655,["1683","static/chunks/app/%5Blang%5D/%5BcountryCode%5D/%5BclientId%5D/v5/messageTester/page-587e52520c55b45e.js?dpl=96f129e6d136ae4c1df3beeeeeb1755d6fe23767"],"default",1]
+4:I[4707,[],""]
+8:I[36423,[],""]
+5:["lang","en-US","d"]
+6:["countryCode","US","d"]
+7:["clientId","MARVEL-MARVEL.COM.WEB","d"]
+0:["-D217cFhz3ZPGx9J-I3N_",[["children",["lang","en-US","d"],"children",["countryCode","US","d"],"children",["clientId","MARVEL-MARVEL.COM.WEB","d"],"children","v5","children","messageTester",["messageTester",{"children":["__PAGE__",{}]}],["messageTester",{"children":["__PAGE__",{},[["$L1",["$","$L2",null,{"props":{"params":{"lang":"en-US","countryCode":"US","clientId":"MARVEL-MARVEL.COM.WEB"},"searchParams":{}},"Component":"$3"}],null],null],null]},[null,["$","$L4",null,{"parallelRouterKey":"children","segmentPath":["children","$5","children","$6","children","$7","children","v5","children","messageTester","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L8",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","notFoundStyles":"$undefined"}]],null],["$L9",null]]]]
+9:[["$","meta","0",{"name":"viewport","content":"width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"}],["$","meta","1",{"charSet":"utf-8"}],["$","title","2",{"children":"MyDisney Login"}],["$","meta","3",{"name":"description","content":"MyDisney lets you seamlessly log in to services and experiences across The Walt Disney Family of Companies, such as Disney+, ESPN, Walt Disney World, and more."}],["$","link","4",{"rel":"icon","href":"/favicon.ico","type":"image/x-icon","sizes":"48x48"}]]
+1:null
