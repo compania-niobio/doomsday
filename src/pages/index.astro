@@ -1,11 +1,2320 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+// UrwDin (marvel.com) — mesmas famílias declaradas em src/assets/design_system.html
+import urwBlack from '../assets/marvel.com/assets/9bddb914534958eb_urwdincond-black.woff?url';
+import urwBold from '../assets/marvel.com/assets/6371550a45a8f21f_urwdincond-bold.woff?url';
+import urwDemi from '../assets/marvel.com/assets/34c67b481fa29fad_urwdinsemicond-demi.woff?url';
+
+import introVideo from '../assets/video/Intro-V2.webm?url';
+import logoNiobio from '../assets/logo/logo-niobio-300.webp?url';
+
+// Pôsteres da linha do tempo (src/assets/poster-vingadores) — 300/600/1200 px
+import xmen300 from '../assets/poster-vingadores/x-men-300.webp?url';
+import xmen600 from '../assets/poster-vingadores/x-men-600.webp?url';
+import xmen1200 from '../assets/poster-vingadores/x-men-1200.webp?url';
+import xmen2_300 from '../assets/poster-vingadores/x-men-2-300.webp?url';
+import xmen2_600 from '../assets/poster-vingadores/x-men-2-600.webp?url';
+import xmen2_1200 from '../assets/poster-vingadores/x-men-2-1200.webp?url';
+import cap2011_300 from '../assets/poster-vingadores/capitao-america-2011-300.webp?url';
+import cap2011_600 from '../assets/poster-vingadores/capitao-america-2011-600.webp?url';
+import cap2011_1200 from '../assets/poster-vingadores/capitao-america-2011-1200.webp?url';
+import avengers2012_300 from '../assets/poster-vingadores/avengers-2012-300.webp?url';
+import avengers2012_600 from '../assets/poster-vingadores/avengers-2012-600.webp?url';
+import avengers2012_1200 from '../assets/poster-vingadores/avengers-2012-1200.webp?url';
+import infinityWar300 from '../assets/poster-vingadores/avengers_infinity_war_300px.webp?url';
+import infinityWar600 from '../assets/poster-vingadores/avengers_infinity_war_600px.webp?url';
+import infinityWar1200 from '../assets/poster-vingadores/avengers_infinity_war_1200px.webp?url';
+import endgame300 from '../assets/poster-vingadores/avengers_endgame_300px.webp?url';
+import endgame600 from '../assets/poster-vingadores/avengers_endgame_600px.webp?url';
+import endgame1200 from '../assets/poster-vingadores/avengers_endgame_1200px.webp?url';
+import loki300 from '../assets/poster-vingadores/loki-300.webp?url';
+import loki600 from '../assets/poster-vingadores/loki-600.webp?url';
+import loki1200 from '../assets/poster-vingadores/loki-1200.webp?url';
+import spider300 from '../assets/poster-vingadores/spider_man_poster-300.webp?url';
+import spider600 from '../assets/poster-vingadores/spider_man_poster-600.webp?url';
+import spider1200 from '../assets/poster-vingadores/spider_man_poster-1200.webp?url';
+import strange300 from '../assets/poster-vingadores/estranho-300.webp?url';
+import strange600 from '../assets/poster-vingadores/estranho-600.webp?url';
+import strange1200 from '../assets/poster-vingadores/estranho-1200.webp?url';
+import shangChi300 from '../assets/poster-vingadores/shang-chi-300.webp?url';
+import shangChi600 from '../assets/poster-vingadores/shang-chi-600.webp?url';
+import shangChi1200 from '../assets/poster-vingadores/shang-chi-1200.webp?url';
+import wakanda300 from '../assets/poster-vingadores/wakanda-300.webp?url';
+import wakanda600 from '../assets/poster-vingadores/wakanda-600.webp?url';
+import wakanda1200 from '../assets/poster-vingadores/wakanda-1200.webp?url';
+import deadpool300 from '../assets/poster-vingadores/deadpool-300.webp?url';
+import deadpool600 from '../assets/poster-vingadores/deadpool-600.webp?url';
+import deadpool1200 from '../assets/poster-vingadores/deadpool-1200.webp?url';
+import cap2025_300 from '../assets/poster-vingadores/capitao-300.webp?url';
+import cap2025_600 from '../assets/poster-vingadores/capitao-600.webp?url';
+import cap2025_1200 from '../assets/poster-vingadores/capitao-1200.webp?url';
+import thunderbolts300 from '../assets/poster-vingadores/thunderbolts-300.webp?url';
+import thunderbolts600 from '../assets/poster-vingadores/thunderbolts-600.webp?url';
+import thunderbolts1200 from '../assets/poster-vingadores/thunderbolts-1200.webp?url';
+import fantastic300 from '../assets/poster-vingadores/fantastic4-300.webp?url';
+import fantastic600 from '../assets/poster-vingadores/fantastic4-600.webp?url';
+import fantastic1200 from '../assets/poster-vingadores/fantastic4-1200.webp?url';
+import doomsday300 from '../assets/poster-vingadores/doomsday-card-300.webp?url';
+import doomsday600 from '../assets/poster-vingadores/doomsday-card-600.webp?url';
+import doomsday1200 from '../assets/poster-vingadores/doomsday-card-1200.webp?url';
+
+// Cada letra vira um <span> para o slide letra por letra (textSlide)
+const split = (text: string, offset: number) =>
+	[...text].map((ch, i) => ({ ch: ch === ' ' ? ' ' : ch, i: offset + i }));
+
+
+// Atos da narrativa (parallax ao rolar) — cada título: linha vazada + linha preenchida
+const actsRaw = [
+	{
+		n: '01',
+		title: 'O presságio',
+		head: ['Tudo o que conhecemos', 'está prestes a mudar.'],
+		body: ['O equilíbrio entre os universos está desaparecendo.', 'E algo muito maior está despertando.'],
+	},
+	{
+		n: '02',
+		title: 'A ameaça',
+		head: ['O maior perigo', 'não vem de outro mundo.'],
+		body: ['Ele vem de alguém que acredita ter o poder de decidir o destino de todos eles.'],
+	},
+	{
+		n: '04',
+		title: 'O sacrifício',
+		head: ['Nenhuma vitória', 'vem sem um preço.'],
+		body: ['Alianças serão testadas.', 'Legados serão colocados à prova.', 'E o futuro nunca mais será o mesmo.'],
+	},
+	{
+		n: '05',
+		title: 'A conexão com a linha do tempo',
+		head: ['Mas o fim', 'não começou agora.'],
+		body: ['Cada batalha, cada escolha e cada sacrifício nos trouxeram até aqui.'],
+		finale: 'Tudo está conectado.',
+	},
+];
+
+const acts = actsRaw.map((act, i) => {
+	let w = 0;
+	const lines = act.head.map((line) => line.split(' ').map((t) => ({ t, w: w++ })));
+	const align = i === actsRaw.length - 1 ? 'center' : i % 2 ? 'right' : 'left';
+	// Fecho agrupado por palavra: a quebra de linha só acontece entre palavras
+	let k = 0;
+	const finaleWords = act.finale
+		? act.finale.split(' ').map((word) => [...word].map((ch) => ({ ch, i: k++ })))
+		: null;
+	return { ...act, lines, align, finaleWords };
+});
+
+// Segunda dobra — linha do tempo dos filmes (sinopse vazia = ainda não definida)
+const films = [
+	{
+		title: 'X-Men',
+		year: '2000',
+		synopsis:
+			'Em um mundo onde mutantes vivem escondidos e são perseguidos por serem diferentes, dois caminhos entram em conflito: o sonho de coexistência pacífica do Professor Charles Xavier e a visão radical de Magneto, que acredita na superioridade dos mutantes. Quando uma nova ameaça surge, os X-Men precisam lutar para proteger tanto humanos quanto mutantes de uma guerra que pode mudar o destino da humanidade.',
+		img: { s: xmen300, m: xmen600, l: xmen1200 },
+	},
+	{
+		title: 'X-Men 2',
+		year: '2003',
+		synopsis:
+			'Após um ataque misterioso ao presidente dos Estados Unidos, os mutantes passam a ser alvo de uma perseguição ainda mais intensa. Enquanto o governo prepara uma ofensiva contra eles, os X-Men precisam unir forças até mesmo com antigos inimigos para enfrentar William Stryker, um militar que esconde um plano capaz de exterminar todos os mutantes.',
+		img: { s: xmen2_300, m: xmen2_600, l: xmen2_1200 },
+	},
+	{
+		title: 'Capitão América: O Primeiro Vingador',
+		year: '2011',
+		synopsis:
+			'Durante a Segunda Guerra Mundial, Steve Rogers, um jovem franzino e determinado, recebe a oportunidade de participar de um experimento que transforma seu corpo e o torna o Capitão América. Ao lado dos aliados, ele enfrenta a organização HYDRA e seu líder, Caveira Vermelha, que pretende utilizar uma poderosa energia para conquistar o mundo.',
+		img: { s: cap2011_300, m: cap2011_600, l: cap2011_1200 },
+	},
+	{
+		title: 'Os Vingadores',
+		year: '2012',
+		synopsis:
+			'Quando Loki ameaça a Terra com a ajuda de um exército alienígena, Nick Fury reúne alguns dos maiores heróis do planeta. Homem de Ferro, Capitão América, Thor, Hulk, Viúva Negra e Gavião Arqueiro precisam superar suas diferenças e aprender a trabalhar juntos para impedir uma invasão que pode destruir a humanidade.',
+		img: { s: avengers2012_300, m: avengers2012_600, l: avengers2012_1200 },
+	},
+	{
+		title: 'Vingadores: Guerra Infinita',
+		year: '2018',
+		synopsis:
+			'Uma ameaça de proporções universais finalmente chega à Terra. Thanos, o Titã Louco, inicia sua busca pelas Joias do Infinito, artefatos capazes de alterar toda a existência. Enquanto os Vingadores e seus aliados tentam impedir seus planos, o destino de bilhões de vidas fica nas mãos de heróis que enfrentam sua maior batalha.',
+		img: { s: infinityWar300, m: infinityWar600, l: infinityWar1200 },
+	},
+	{
+		title: 'Vingadores: Ultimato',
+		year: '2019',
+		synopsis:
+			'Após o devastador estalo de Thanos, metade de toda a vida do universo desapareceu. Os heróis sobreviventes precisam encontrar forças para enfrentar as consequências da derrota. Com uma última esperança de reverter a tragédia, os Vingadores embarcam em uma missão extraordinária que colocará à prova seus limites, sacrifícios e o próprio destino do universo.',
+		img: { s: endgame300, m: endgame600, l: endgame1200 },
+	},
+	{
+		title: 'Loki — Temporada 1',
+		year: '2021',
+		synopsis:
+			'Após escapar com o Tesseract durante os acontecimentos de Ultimato, Loki acaba capturado pela AVT, uma organização responsável por controlar as linhas temporais. Obrigado a trabalhar com agentes que monitoram o tempo, o Deus da Trapaça descobre segredos que ameaçam a própria estrutura da realidade e colocam em risco tudo o que ele conhece.',
+		img: { s: loki300, m: loki600, l: loki1200 },
+	},
+	{
+		title: 'Loki — Temporada 2',
+		year: '2023',
+		synopsis:
+			'Preso em uma realidade temporal instável, Loki precisa encontrar uma maneira de controlar seus saltos entre diferentes linhas do tempo. Ao lado de aliados inesperados, ele enfrenta uma ameaça que pode destruir a AVT e provocar o colapso de inúmeras realidades. O destino do multiverso está em jogo.',
+		// Provisório: mesmo pôster da Temporada 1 até haver um da Temporada 2 na pasta
+		img: { s: loki300, m: loki600, l: loki1200 },
+	},
+	{
+		title: 'Homem-Aranha: Sem Volta Para Casa',
+		year: '2021',
+		synopsis:
+			'Após ter sua identidade revelada ao mundo, Peter Parker procura a ajuda do Doutor Estranho para fazer todos esquecerem que ele é o Homem-Aranha. Entretanto, um feitiço sai do controle e abre as portas do multiverso, trazendo inimigos de outras realidades. Peter precisará enfrentar as consequências de suas escolhas e descobrir o verdadeiro significado de ser um herói.',
+		img: { s: spider300, m: spider600, l: spider1200 },
+	},
+	{
+		title: 'Doutor Estranho no Multiverso da Loucura',
+		year: '2022',
+		synopsis:
+			'Após os acontecimentos de Homem-Aranha: Sem Volta Para Casa, Doutor Estranho enfrenta uma ameaça que ultrapassa os limites de sua realidade. Ao lado de America Chavez, uma jovem capaz de viajar entre universos, ele atravessa diferentes dimensões e encontra versões alternativas de personagens conhecidos. Mas uma força misteriosa ameaça destruir o equilíbrio do multiverso.',
+		img: { s: strange300, m: strange600, l: strange1200 },
+	},
+	{
+		title: 'Shang-Chi e a Lenda dos Dez Anéis',
+		year: '2021',
+		synopsis:
+			'Shang-Chi tenta levar uma vida comum, escondendo seu passado como herdeiro de uma poderosa organização criminosa. Quando seu pai, Wenwu, o força a confrontar suas origens, ele acaba envolvido em uma jornada que revela segredos de sua família e o poder ancestral dos Dez Anéis, artefatos capazes de transformar qualquer batalha.',
+		img: { s: shangChi300, m: shangChi600, l: shangChi1200 },
+	},
+	{
+		title: 'Pantera Negra: Wakanda Para Sempre',
+		year: '2022',
+		synopsis:
+			"Após a perda do Rei T'Challa, Wakanda enfrenta um período de luto e instabilidade enquanto tenta proteger seu legado e suas riquezas naturais. Quando uma poderosa civilização subaquática liderada por Namor surge como uma nova ameaça, os wakandanos precisam encontrar forças para defender seu reino e decidir quem será responsável por seu futuro.",
+		img: { s: wakanda300, m: wakanda600, l: wakanda1200 },
+	},
+	{
+		title: 'Deadpool & Wolverine',
+		year: '2024',
+		synopsis:
+			'Quando sua realidade está prestes a desaparecer, Wade Wilson é recrutado pela AVT para uma missão que pode mudar seu destino. Para salvar seu universo, ele precisa encontrar um Wolverine de outra realidade e convencê-lo a embarcar em uma aventura repleta de conflitos, viagens pelo multiverso e encontros inesperados.',
+		img: { s: deadpool300, m: deadpool600, l: deadpool1200 },
+	},
+	{
+		title: 'Capitão América: Admirável Mundo Novo',
+		year: '2025',
+		synopsis:
+			'Agora assumindo oficialmente o escudo e o legado do Capitão América, Sam Wilson se vê envolvido em uma crise internacional após conhecer o recém-eleito presidente dos Estados Unidos, Thaddeus Ross. Diante de uma conspiração global e de uma ameaça capaz de colocar o mundo em perigo, Sam precisa provar que está preparado para carregar o símbolo de uma das maiores lendas dos Vingadores.',
+		img: { s: cap2025_300, m: cap2025_600, l: cap2025_1200 },
+	},
+	{
+		title: 'Thunderbolts*',
+		year: '2025',
+		synopsis:
+			'Reunidos em uma missão misteriosa organizada pelo governo, um grupo de indivíduos com passados controversos acaba preso em uma situação mortal. Yelena Belova, Bucky Barnes e outros personagens precisam enfrentar seus próprios conflitos enquanto descobrem que foram colocados em uma armadilha. Para sobreviver, terão que aprender a trabalhar juntos, mesmo sem confiar uns nos outros.',
+		img: { s: thunderbolts300, m: thunderbolts600, l: thunderbolts1200 },
+	},
+	{
+		title: 'Quarteto Fantástico: Primeiros Passos',
+		year: '2025',
+		synopsis:
+			'Em uma realidade alternativa inspirada na estética futurista dos anos 1960, Reed Richards, Sue Storm, Johnny Storm e Ben Grimm precisam equilibrar suas vidas como família e como super-heróis. Quando Galactus, uma entidade cósmica devoradora de mundos, ameaça seu planeta, o Quarteto Fantástico enfrenta seu maior desafio, colocando em jogo o futuro de toda a humanidade.',
+		img: { s: fantastic300, m: fantastic600, l: fantastic1200 },
+	},
+	{
+		title: 'Vingadores: Doomsday',
+		year: '2026',
+		synopsis: '',
+		img: { s: doomsday300, m: doomsday600, l: doomsday1200 },
+	},
+].map((f, i) => ({ ...f, n: String(i + 1).padStart(2, '0') }));
+
+// ---- Linha do Tempo Sagrada: geometria do fio (unidades do mundo; altura = 1000) ----
+// Cada filme é um nó sobre o fio; entre eles, ramificações (variantes) que crescem e são podadas
+const SEG = 1150;
+const X0 = 950;
+const nodeX = films.map((_, i) => X0 + i * SEG);
+const worldW = nodeX[nodeX.length - 1] + 1500;
+const strandY = (x: number) => 500 + 34 * Math.sin(x / 270) + 15 * Math.sin(x / 97 + 1.3) + 6 * Math.sin(x / 41 + 0.4);
+
+type Pt = [number, number];
+const f1 = (n: number) => n.toFixed(1);
+// Catmull-Rom → Bézier: curva suave passando pelos pontos amostrados
+const smoothPath = (pts: Pt[]) => {
+	let d = `M${f1(pts[0][0])},${f1(pts[0][1])}`;
+	for (let i = 0; i < pts.length - 1; i++) {
+		const p0 = pts[i - 1] ?? pts[i];
+		const p1 = pts[i];
+		const p2 = pts[i + 1];
+		const p3 = pts[i + 2] ?? p2;
+		d += ` C${f1(p1[0] + (p2[0] - p0[0]) / 6)},${f1(p1[1] + (p2[1] - p0[1]) / 6)} ${f1(p2[0] - (p3[0] - p1[0]) / 6)},${f1(p2[1] - (p3[1] - p1[1]) / 6)} ${f1(p2[0])},${f1(p2[1])}`;
+	}
+	return d;
+};
+const sampled = (fy: (x: number) => number) => {
+	const pts: Pt[] = [];
+	for (let x = -60; x <= worldW + 60; x += 28) pts.push([x, fy(x)]);
+	return smoothPath(pts);
+};
+const strand = sampled(strandY);
+const twistA = sampled((x) => strandY(x) + 22 * Math.sin(x / 150));
+const twistB = sampled((x) => strandY(x) - 18 * Math.sin(x / 205 + 2));
+
+// Ramificações determinísticas (mesma forma a cada build)
+let seed = 20260512;
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const bez = (p: Pt[], t: number): Pt => {
+	const m = 1 - t;
+	const k = [m * m * m, 3 * m * m * t, 3 * m * t * t, t * t * t];
+	return [0, 1].map((a) => p.reduce((s, q, i) => s + q[a] * k[i], 0)) as Pt;
+};
+const curve = (a: Pt, len: number, rise: number, dir: number) => {
+	const pts: Pt[] = [a, [a[0] + len * 0.42 * dir, a[1] + rise * 0.04], [a[0] + len * 0.66 * dir, a[1] + rise * 0.7], [a[0] + len * dir, a[1] + rise]];
+	const [p0, p1, p2, p3] = pts.map((p) => `${f1(p[0])},${f1(p[1])}`);
+	return { pts, d: `M${p0} C${p1} ${p2} ${p3}` };
+};
+const branches: { x: number; w: string; paths: string[] }[] = [];
+for (let x = 40; x < worldW - 120; x += 34 + rnd() * 52) {
+	if (nodeX.some((nx) => Math.abs(x - nx) < 190)) continue;
+	const side = rnd() > 0.5 ? -1 : 1;
+	const dir = rnd() > 0.8 ? -1 : 1;
+	const main = curve([x, strandY(x)], 170 + rnd() * 270, side * (60 + rnd() * 170), dir);
+	const paths = [main.d];
+	if (rnd() > 0.45) paths.push(curve(bez(main.pts, 0.45 + rnd() * 0.3), 60 + rnd() * 110, side * (30 + rnd() * 80), dir).d);
+	branches.push({ x: Math.round(x), w: (0.9 + rnd() * 1.5).toFixed(2), paths });
+}
+const filmNodes = films.map((f, i) => ({
+	...f,
+	x: nodeX[i],
+	fx: ((nodeX[i] / worldW) * 100).toFixed(3),
+	fy: (strandY(nodeX[i]) / 10).toFixed(3),
+	side: i % 2 ? 'down' : 'up',
+}));
+
+const fontFaces = `
+@font-face { font-family: UrwDin; font-weight: 900; font-display: swap; src: url("${urwBlack}") format("woff"); }
+@font-face { font-family: UrwDin; font-weight: 700; font-display: swap; src: url("${urwBold}") format("woff"); }
+@font-face { font-family: UrwDin; font-weight: 600; font-display: swap; src: url("${urwDemi}") format("woff"); }
+`;
 ---
 
 <Layout>
-	<Welcome />
+	<!-- JetBrains Mono (família mono do design system) -->
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" />
+	<Fragment set:html={`<style>${fontFaces}</style>`} />
+
+	<div class="noise" aria-hidden="true"></div>
+
+	<main class="page">
+		<!-- ================= HISTÓRIA: vídeo controlado pela rolagem + atos em parallax ================= -->
+		<section class="story" id="top" data-story aria-labelledby="story-title">
+		<!-- Palco fixo (sticky): o card com o vídeo fica parado enquanto os atos rolam por cima -->
+		<div class="hero" data-hero>
+			<!-- Loader: aparece enquanto a fenda cinemascope não abre -->
+			<div class="hero-loader" aria-hidden="true">
+				<svg class="ring-loader" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#ccff00" stroke-width="4" stroke-linecap="round"></circle></svg>
+				<span>Carregando o fim</span>
+			</div>
+
+			<div class="hero-card">
+				<!-- Mídia: o tempo do vídeo acompanha a rolagem (scrub) -->
+				<div class="hero-media" aria-hidden="true">
+					<video
+						class="hero-video"
+						src={introVideo}
+						muted
+						playsinline
+						preload="auto"
+						data-hero-video
+					></video>
+				</div>
+
+				<!-- Atmosfera (design system: vignette, grid-drift, spotlight) -->
+				<div class="hero-shade" aria-hidden="true"></div>
+				<div class="acts-shade" aria-hidden="true"></div>
+				<div class="grid-drift" aria-hidden="true"></div>
+				<div class="hero-spotlight" aria-hidden="true"></div>
+				<div class="acts-glow" aria-hidden="true"></div>
+
+				<!-- ===== NAV ===== -->
+				<!-- transition:persist: o topo não é recriado entre páginas (ClientRouter) -->
+				<header class="hero-nav nav-load" transition:persist="site-header">
+					<a href="#top" class="brand" aria-label="Vingadores: Doomsday — início">
+						<span class="brand-mark">
+							<span class="radar-ring"></span>
+							<img src={logoNiobio} alt="" width="32" height="32" />
+						</span>
+					</a>
+
+					<nav class="nav-links" aria-label="Principal">
+						<a class="nav-link" href="#filme">O filme</a>
+						<a class="nav-link" href="#personagens">Personagens</a>
+						<a class="nav-link" href="#trailer">Trailer</a>
+						<a class="nav-link" href="#ingressos">Ingressos</a>
+					</nav>
+
+					<div class="nav-actions">
+						<a href="#conta" class="icon-btn" aria-label="Minha conta">
+							<svg viewBox="0 0 24 24" class="icon-base"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>
+						</a>
+						<a href="#ingressos" class="icon-btn" aria-label="Ingressos">
+							<svg viewBox="0 0 24 24" class="icon-base"><path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"></path><path d="M14 6v12" stroke-dasharray="2 2.5"></path></svg>
+							<span class="badge" aria-hidden="true"></span>
+						</a>
+					</div>
+				</header>
+
+				<!-- "Role para descobrir": some quando a rolagem começa -->
+				<div class="intro-fade">
+					<a href="#filme" class="hud hud--right reveal" style="--d:2.3s">
+						<span>Role para descobrir</span>
+						<svg viewBox="0 0 24 24" class="icon-base hud-arrow"><path d="M12 5v14M6 13l6 6 6-6"></path></svg>
+					</a>
+				</div>
+
+				<!-- ===== HUD inferior: timecode acompanha o vídeo ===== -->
+				<div class="hud hud--left reveal" style="--d:2.3s">
+					<span>Cap. 01</span>
+					<span class="hud-sep"></span>
+					<span class="hud-time" data-timecode>00:00.0</span>
+				</div>
+			</div>
+		</div>
+
+		<!-- Trilha que gera a rolagem: o Ato 01 já ocupa a primeira tela -->
+		<div class="story-track" data-acts>
+			<h1 id="story-title" class="sr-only">Vingadores: Doomsday</h1>
+
+			<div id="filme"></div>
+			{acts.map((a) => (
+				<article class={`act act--${a.align}`} data-act>
+					<div class="act-inner">
+						<h2 class="act-head" aria-label={a.head.join(' ')}>
+							{a.lines.map((words, li) => (
+								<span class={`hl hl--${li === 0 ? 'outline' : 'fill'}`} aria-hidden="true">
+									{words.map((wd) => (
+										<Fragment><span class="w" style={`--w:${wd.w}`}>{wd.t}</span>{' '}</Fragment>
+									))}
+								</span>
+							))}
+						</h2>
+						<div class="act-body">
+							{a.body.map((b, j) => <p style={`--j:${j}`}>{b}</p>)}
+						</div>
+						{a.finaleWords && (
+							<p class="act-finale" aria-label={a.finale}>
+								{a.finaleWords.map((word) => (
+									<span class="fw" aria-hidden="true">
+										{word.map((l) => (
+											<span class="ch" style={`--i:${l.i}`}>{l.ch}</span>
+										))}
+									</span>
+								))}
+							</p>
+						)}
+					</div>
+				</article>
+			))}
+			<div class="story-outro" aria-hidden="true"></div>
+		</div>
+		</section>
+
+		<!-- ================= SEGUNDA DOBRA · LINHA DO TEMPO SAGRADA ================= -->
+		<section class="saga" id="linha-do-tempo" aria-label="Linha do tempo dos filmes" data-saga style={`--n:${films.length}`}>
+			<!-- Palco fixo: a rolagem conduz a câmera ao longo do fio -->
+			<div class="saga-sticky">
+			<div class="saga-card" data-saga-card>
+				<!-- Fundo: pôster do filme ativo, bem escuro, em crossfade -->
+				<div class="saga-bg" aria-hidden="true">
+					{films.map((f) => (
+						<img src={f.img.l} alt="" loading="lazy" decoding="async" data-film-bg />
+					))}
+				</div>
+				<div class="saga-shade" aria-hidden="true"></div>
+				<div class="grid-drift" aria-hidden="true"></div>
+
+				<!-- Limites do multiverso: lente vermelha em volta do fio -->
+				<svg class="sg-bounds" viewBox="0 0 1600 1000" preserveAspectRatio="none" aria-hidden="true">
+					<g class="sg-bounds-glow">
+						<path d="M-40,250 C420,-20 1180,-20 1640,250" />
+						<path d="M-40,750 C420,1020 1180,1020 1640,750" />
+					</g>
+					<g class="sg-bounds-line">
+						<path d="M-40,250 C420,-20 1180,-20 1640,250" />
+						<path d="M-40,750 C420,1020 1180,1020 1640,750" />
+					</g>
+					<g class="sg-bounds-dash">
+						<path d="M-40,330 C420,140 1180,140 1640,330" />
+						<path d="M-40,670 C420,860 1180,860 1640,670" />
+					</g>
+				</svg>
+
+				<!-- O fio: trilha larga que desliza conforme a rolagem -->
+				<div class="sg-stage" data-sg-stage>
+					<div class="sg-track" data-sg-track style={`--w:${worldW}`}>
+						<svg class="sg-svg sg-glow" viewBox={`0 0 ${worldW} 1000`} aria-hidden="true">
+							<path d={strand} />
+						</svg>
+						<svg class="sg-svg sg-branches" viewBox={`0 0 ${worldW} 1000`} aria-hidden="true">
+							{branches.map((b) => (
+								<g class="sg-branch" data-bx={b.x} stroke-width={b.w}>
+									{b.paths.map((d) => <path d={d} pathLength="1" />)}
+								</g>
+							))}
+						</svg>
+						<svg class="sg-svg sg-lines" viewBox={`0 0 ${worldW} 1000`} aria-hidden="true">
+							<path class="sg-twist sg-twist--a" d={twistA} />
+							<path class="sg-twist sg-twist--b" d={twistB} />
+							<path class="sg-core" d={strand} />
+						</svg>
+						<svg class="sg-svg sg-pulse" viewBox={`0 0 ${worldW} 1000`} aria-hidden="true">
+							<path d={strand} pathLength="1" />
+						</svg>
+
+						{filmNodes.map((f, i) => (
+							<div
+								class={`sg-film sg-film--${f.side}`}
+								data-film={i}
+								data-x={f.x}
+								data-title={f.title}
+								data-year={f.year}
+								data-n={f.n}
+								data-synopsis={f.synopsis}
+								style={`--fx:${f.fx};--fy:${f.fy}`}
+							>
+								<span class="sg-year" aria-hidden="true">{f.year}</span>
+								<span class="sg-leader" aria-hidden="true"></span>
+								<button class="sg-card" type="button" aria-label={`${f.title} (${f.year})`}>
+									<span class="sg-poster tilt-card" data-tilt-poster>
+										<img src={f.img.m} srcset={`${f.img.s} 300w, ${f.img.m} 600w, ${f.img.l} 1200w`} sizes="(max-width: 900px) 30vw, 220px" alt={`Pôster de ${f.title} (${f.year})`} loading="lazy" decoding="async" draggable="false" />
+									</span>
+									<span class="sg-meta" aria-hidden="true">
+										<span class="sg-meta-cap">Capítulo {f.n}</span>
+										<span class="sg-meta-title">{f.title}</span>
+										<span class="sg-meta-year">{f.year}</span>
+									</span>
+								</button>
+								<span class="sg-node" aria-hidden="true">
+									<span class="radar-ring"></span>
+									<span class="sg-node-n">{f.n}</span>
+								</span>
+							</div>
+						))}
+					</div>
+				</div>
+
+				<!-- Texto do filme ativo -->
+				<div class="saga-copy" data-saga-copy aria-live="polite">
+					<p class="saga-eyebrow s-rv" style="--d:0.1s">
+						<span class="pulse-dot"></span>Linha do tempo <span class="saga-eyebrow-sep"></span> <span data-saga-chapter>Capítulo {films[0].n}</span>
+					</p>
+					<h2 class="saga-title" data-saga-title aria-label={`${films[0].title} (${films[0].year})`}></h2>
+					<p class="saga-synopsis s-rv" style="--d:0.5s" data-saga-synopsis>{films[0].synopsis}</p>
+				</div>
+
+				<!-- HUD: ano corrente no fio + variantes podadas -->
+				<div class="sg-hud s-rv" style="--d:0.4s" aria-hidden="true">
+					<span class="sg-hud-row"><span class="sg-hud-dot"></span>Linha do tempo sagrada</span>
+					<span class="sg-hud-row">T <b data-sg-t>{films[0].year}.0</b></span>
+					<span class="sg-hud-row">Variantes podadas <b data-sg-pruned>000</b></span>
+				</div>
+			</div>
+			</div>
+		</section>
+	</main>
 </Layout>
+
+<style is:global>
+	/* =========================================================
+	   TOKENS — src/assets/design_system.html
+	   ========================================================= */
+	@font-face {
+		font-family: Inspire;
+		font-weight: 400;
+		font-display: swap;
+		src: url('https://static-assets.bamgrid.com/fonts/inspire/Inspire-Regular.f2199f841165c4ddbafcf177da3ef974.woff2') format('woff2');
+	}
+	@font-face {
+		font-family: Inspire;
+		font-weight: 600;
+		font-display: swap;
+		src: url('https://static-assets.bamgrid.com/fonts/inspire/Inspire-Bold.4ff15ddc93445342649194969715b0b5.woff2') format('woff2');
+	}
+
+	:root {
+		--ink: #1c1c1c;
+		--graphite: #6b6b6b;
+		--bone: #f5f5f0;
+		--obsidian: #09090b;
+		--acid: #ccff00;
+		--ember: #ff3300;
+
+		--ff-display: 'UrwDin', 'Inspire', 'Trebuchet MS', Helvetica, Arial, sans-serif;
+		--ff-body: 'Inspire', 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+		--ff-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+		--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+		--ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+		--frame: clamp(8px, 1.1vw, 16px);
+		--radius: clamp(20px, 2.2vw, 32px);
+		--gutter: clamp(16px, 4vw, 64px);
+	}
+
+	*,
+	*::before,
+	*::after {
+		box-sizing: border-box;
+	}
+
+	html {
+		background: var(--obsidian);
+	}
+
+	body {
+		font-family: var(--ff-body);
+		background: var(--obsidian);
+		color: #fff;
+		overflow-x: hidden;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	::selection {
+		background: var(--ink);
+		color: var(--acid);
+	}
+
+	a {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	/* Noise (animations-gemini2) */
+	.noise {
+		position: fixed;
+		inset: 0;
+		opacity: 0.06;
+		pointer-events: none;
+		z-index: 9999;
+		background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+	}
+
+	/* =========================================================
+	   HERO — moldura
+	   ========================================================= */
+	.story {
+		position: relative;
+		background: var(--obsidian);
+	}
+
+	/* Palco fixo: fica preso no topo durante toda a história; a trilha rola por cima */
+	.hero {
+		position: sticky;
+		top: 0;
+		z-index: 0;
+		height: 100svh;
+		margin-bottom: -100svh;
+		padding: var(--frame);
+		isolation: isolate;
+	}
+
+	.hero-card {
+		position: relative;
+		height: 100%;
+		border-radius: var(--radius);
+		overflow: hidden;
+		background: #000;
+		isolation: isolate;
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 40px 120px -40px rgba(204, 255, 0, 0.12);
+		/* Abertura em fenda cinemascope */
+		clip-path: inset(47% 0 47% 0 round var(--radius));
+		transition: clip-path 1.5s var(--ease-out), transform 0.2s linear;
+		transform-origin: 50% 0;
+		will-change: clip-path, transform;
+	}
+
+	.is-ready .hero-card {
+		clip-path: inset(0 0 0 0 round var(--radius));
+	}
+
+	.hero-loader {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		place-content: center;
+		justify-items: center;
+		gap: 14px;
+		font: 500 11px/1 var(--ff-mono);
+		letter-spacing: 0.3em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.5);
+		transition: opacity 0.5s ease;
+		z-index: 0;
+	}
+
+	.hero-loader .ring-loader {
+		width: 28px;
+		height: 28px;
+	}
+
+	.is-ready .hero-loader {
+		opacity: 0;
+	}
+
+	/* =========================================================
+	   MÍDIA + ATMOSFERA
+	   ========================================================= */
+	/* Parallax do vídeo: sobe devagar e aproxima conforme a rolagem (--sp 0→1) + leve resposta ao cursor */
+	.hero-media {
+		position: absolute;
+		inset: -8%;
+		z-index: 0;
+		transform:
+			translate3d(var(--vx, 0px), calc(var(--vy, 0px) + var(--sp, 0) * -7vh), 0)
+			scale(calc(1 + var(--sp, 0) * 0.14));
+		transition: transform 0.6s var(--ease-out);
+		will-change: transform;
+	}
+
+	.hero-video {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: 50% 55%;
+		filter: brightness(0.82) contrast(1.08) saturate(0.9);
+		transform: scale(1.18);
+		transition: transform 2.8s var(--ease-out);
+	}
+
+	.is-ready .hero-video {
+		transform: scale(1);
+	}
+
+	.hero-shade {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		pointer-events: none;
+		background:
+			radial-gradient(120% 90% at 50% 45%, transparent 35%, rgba(9, 9, 11, 0.75) 100%),
+			linear-gradient(to bottom, rgba(9, 9, 11, 0.7) 0%, rgba(9, 9, 11, 0.15) 22%, rgba(9, 9, 11, 0.05) 55%, rgba(9, 9, 11, 0.85) 100%);
+	}
+
+	.grid-drift {
+		position: absolute;
+		inset: -80px;
+		z-index: 1;
+		pointer-events: none;
+		background-size: 40px 40px;
+		background-image:
+			linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+			linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+		animation: gridDrift 24s linear infinite;
+		-webkit-mask-image: radial-gradient(ellipse at center, #000 20%, transparent 70%);
+		mask-image: radial-gradient(ellipse at center, #000 20%, transparent 70%);
+	}
+
+	@keyframes gridDrift {
+		from { transform: translate3d(0, 0, 0); }
+		to { transform: translate3d(40px, 40px, 0); }
+	}
+
+	.hero-spotlight {
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		pointer-events: none;
+		mix-blend-mode: screen;
+		background: radial-gradient(520px circle at var(--hx, 50%) var(--hy, 40%), rgba(204, 255, 0, 0.14), transparent 60%);
+	}
+
+	/* =========================================================
+	   NAV (design system: glass + nav-link + radar-ring + beam)
+	   ========================================================= */
+	.hero-nav {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 10;
+		display: grid;
+		grid-template-columns: 1fr auto 1fr;
+		align-items: center;
+		gap: 16px;
+		padding: clamp(14px, 2vw, 26px) var(--gutter);
+	}
+
+	.nav-load {
+		opacity: 0;
+		transform: translateY(-10px);
+		transition: opacity 0.8s ease-out 1s, transform 0.8s ease-out 1s;
+	}
+
+	.is-ready .nav-load {
+		opacity: 1;
+		transform: none;
+	}
+
+	.brand {
+		display: inline-flex;
+		align-items: center;
+		gap: 12px;
+		justify-self: start;
+	}
+
+	.brand-mark {
+		position: relative;
+		width: 32px;
+		height: 32px;
+		display: grid;
+		place-items: center;
+	}
+
+	.brand-mark img {
+		position: relative;
+		width: 32px;
+		height: 32px;
+		object-fit: contain;
+		transition: transform 0.7s var(--ease-out);
+	}
+
+	.brand:hover .brand-mark img {
+		transform: rotate(180deg);
+	}
+
+	.nav-links {
+		display: flex;
+		gap: clamp(20px, 2.6vw, 40px);
+		padding: 12px 28px;
+		border-radius: 999px;
+		background: rgba(23, 23, 23, 0.45);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+	}
+
+	.nav-link {
+		position: relative;
+		font: 500 11px/1 var(--ff-body);
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.82);
+		transition: color 0.3s;
+	}
+
+	.nav-link::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: -6px;
+		height: 1px;
+		background: var(--acid);
+		transform: scaleX(0);
+		transform-origin: right;
+		transition: transform 0.5s var(--ease-out);
+	}
+
+	.nav-link:hover {
+		color: #fff;
+	}
+
+	.nav-link:hover::after,
+	.nav-link:focus-visible::after {
+		transform: scaleX(1);
+		transform-origin: left;
+	}
+
+	.nav-actions {
+		justify-self: end;
+		display: flex;
+		gap: 8px;
+	}
+
+	.icon-btn {
+		position: relative;
+		width: 42px;
+		height: 42px;
+		display: grid;
+		place-items: center;
+		border-radius: 999px;
+		color: #fff;
+		background: rgba(23, 23, 23, 0.45);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		transition: background 0.3s, color 0.3s, transform 0.4s var(--ease-elastic);
+	}
+
+	.icon-btn svg {
+		width: 18px;
+		height: 18px;
+	}
+
+	.icon-btn:hover {
+		background: var(--acid);
+		color: var(--ink);
+		transform: translateY(-2px);
+	}
+
+	.badge {
+		position: absolute;
+		top: 7px;
+		right: 7px;
+		width: 8px;
+		height: 8px;
+		border-radius: 999px;
+		background: var(--ember);
+		box-shadow: 0 0 0 2px rgba(9, 9, 11, 0.9);
+	}
+
+	.icon-base {
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.8;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	/* Keyframes de texto (design system: textSlide + glitch) */
+	@keyframes glitch {
+		0%, 92%, 100% { transform: none; filter: none; }
+		93% { transform: translate(-3px, 1px) skewX(-6deg); filter: drop-shadow(3px 0 0 #ff3300); }
+		94% { transform: translate(3px, -1px); filter: drop-shadow(-3px 0 0 #ffffff); }
+		95% { transform: translate(-1px, 0) skewX(4deg); filter: drop-shadow(2px 0 0 #ff3300); }
+	}
+
+	@keyframes textSlide {
+		0% { transform: translateY(110%); opacity: 0; }
+		100% { transform: translateY(0); opacity: 1; }
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.radar-ring {
+		position: absolute;
+		inset: 0;
+		border: 2px solid rgba(255, 255, 255, 0.35);
+		border-radius: 999px;
+		animation: radar 2.4s var(--ease-out) infinite;
+		pointer-events: none;
+	}
+
+	.radar-ring.r2 {
+		animation-delay: 1.2s;
+	}
+
+	@keyframes radar {
+		0% { transform: scale(0.5); opacity: 1; border-width: 2px; }
+		100% { transform: scale(2.5); opacity: 0; border-width: 0; }
+	}
+
+	.ring-loader circle {
+		animation: ring-dash 1.5s ease-in-out infinite;
+	}
+
+	@keyframes ring-dash {
+		0% { stroke-dasharray: 1, 200; stroke-dashoffset: 0; }
+		50% { stroke-dasharray: 90, 200; stroke-dashoffset: -35px; }
+		100% { stroke-dasharray: 90, 200; stroke-dashoffset: -124px; }
+	}
+
+	/* HUD */
+	.hud {
+		position: absolute;
+		z-index: 6;
+		bottom: clamp(28px, 5vh, 52px);
+		height: 64px;
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		font: 500 10px/1 var(--ff-mono);
+		letter-spacing: 0.28em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.6);
+	}
+
+	.hud--left {
+		left: var(--gutter);
+	}
+
+	.hud--right {
+		right: var(--gutter);
+		transition: color 0.3s;
+	}
+
+	.hud--right:hover {
+		color: var(--acid);
+	}
+
+	.hud-sep {
+		width: 28px;
+		height: 1px;
+		background: rgba(255, 255, 255, 0.3);
+	}
+
+	.hud-time {
+		color: #fff;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.hud-arrow {
+		width: 16px;
+		height: 16px;
+		animation: bounce 1.6s ease-in-out infinite;
+	}
+
+	@keyframes bounce {
+		0%, 100% { transform: translateY(0); }
+		50% { transform: translateY(4px); }
+	}
+
+	/* Reveal com desfoque (design system .reveal) */
+	.reveal {
+		opacity: 0;
+		filter: blur(8px);
+		translate: 0 1.5rem;
+		transition:
+			opacity 1s var(--ease-out) var(--d, 0s),
+			filter 1s var(--ease-out) var(--d, 0s),
+			translate 1s var(--ease-out) var(--d, 0s);
+	}
+
+	.is-ready .reveal {
+		opacity: 1;
+		filter: blur(0);
+		translate: 0 0;
+	}
+
+	/* =========================================================
+	   ATOS — parallax ao rolar
+	   ========================================================= */
+	/* Trilha que gera a rolagem — passa por cima do palco fixo */
+	.story-track {
+		position: relative;
+		z-index: 1;
+		pointer-events: none;
+	}
+
+	/* Folga final para o vídeo chegar ao último quadro antes de soltar o palco */
+	.story-outro {
+		height: 40svh;
+	}
+
+	/* "Role para descobrir" some quando a rolagem começa (--intro 0→1) */
+	.intro-fade {
+		position: absolute;
+		inset: 0;
+		z-index: 6;
+		pointer-events: none;
+		opacity: calc(1 - var(--intro, 0) * 1.6);
+	}
+
+	.intro-fade > * {
+		pointer-events: auto;
+	}
+
+	.is-past-intro .intro-fade > * {
+		pointer-events: none;
+	}
+
+	/* Sombra que acompanha o lado do texto (--gx) para manter a leitura */
+	.acts-shade {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		pointer-events: none;
+		background:
+			radial-gradient(70vw 95vh at var(--gx, 28%) 50%, rgba(9, 9, 11, 0.62), transparent 72%),
+			linear-gradient(to bottom, rgba(9, 9, 11, 0.55) 0%, rgba(9, 9, 11, 0.25) 30%, rgba(9, 9, 11, 0.25) 70%, rgba(9, 9, 11, 0.7) 100%);
+	}
+
+	.acts-glow {
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		pointer-events: none;
+		background: radial-gradient(48vw circle at var(--gx, 28%) 50%, rgba(204, 255, 0, 0.09), transparent 62%);
+	}
+
+	/* Cada ato */
+	.act {
+		position: relative;
+		z-index: 1;
+		min-height: 110svh;
+		display: grid;
+		align-content: center;
+		padding: 0 var(--gutter);
+	}
+
+	.act--right {
+		justify-items: end;
+		text-align: right;
+	}
+
+	.act--center {
+		justify-items: center;
+		text-align: center;
+	}
+
+	.act-inner {
+		position: relative;
+		max-width: min(1200px, 100%);
+		opacity: var(--o, 1);
+		transform: translate3d(0, calc(var(--p, 0) * 70px), 0);
+		will-change: transform, opacity;
+	}
+
+	.act-head {
+		margin: 0;
+		font: 900 clamp(2.6rem, 7.4vw, 8.4rem) / 0.86 var(--ff-display);
+		text-transform: uppercase;
+		letter-spacing: -0.005em;
+	}
+
+	.act-head .hl {
+		display: block;
+		overflow: hidden;
+		/* espaço para acentos (Á, É, Ó), cedilha (Ç) e o traço do outline */
+		padding: 0.16em 0.03em 0.27em;
+		margin-top: -0.16em;
+		margin-bottom: -0.24em;
+	}
+
+	.act-head .w {
+		display: inline-block;
+		/* estende a área pintada pelo background-clip até a cedilha (Ç) */
+		padding-bottom: 0.26em;
+		margin-bottom: -0.26em;
+		transform: translateY(110%);
+		opacity: 0;
+	}
+
+	.hl--outline .w {
+		color: transparent;
+		-webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.85);
+	}
+
+	.hl--fill .w {
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.72) 50%, rgba(255, 255, 255, 0.18) 100%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		-webkit-text-fill-color: transparent;
+	}
+
+	.act.is-in .act-head .w {
+		animation: textSlide 0.9s var(--ease-out) calc(0.15s + var(--w) * 70ms) forwards;
+	}
+
+	.act-body {
+		margin-top: clamp(24px, 3.2vw, 44px);
+		max-width: 42ch;
+	}
+
+	.act--right .act-body {
+		margin-left: auto;
+	}
+
+	.act--center .act-body {
+		margin-inline: auto;
+	}
+
+	.act-body p {
+		margin: 0;
+		font: 400 clamp(1rem, 1.3vw, 1.25rem) / 1.6 var(--ff-body);
+		color: rgba(255, 255, 255, 0.68);
+		opacity: 0;
+		filter: blur(8px);
+		translate: 0 1.2rem;
+		transition:
+			opacity 1s var(--ease-out),
+			filter 1s var(--ease-out),
+			translate 1s var(--ease-out);
+		transition-delay: calc(0.6s + var(--j) * 0.15s);
+	}
+
+	.act.is-in .act-body p {
+		opacity: 1;
+		filter: blur(0);
+		translate: 0 0;
+	}
+
+	/* Fecho: TUDO ESTÁ CONECTADO. em Acid com glitch (como o CAOS. do hero) */
+	.act-finale {
+		display: flex;
+		justify-content: center;
+		flex-wrap: wrap;
+		gap: 0.06em 0.4em;
+		overflow: hidden;
+		margin: clamp(48px, 9vh, 110px) 0 0;
+		padding: 0.18em 0.04em 0.03em;
+		font: 900 clamp(2.4rem, 8.6vw, 10rem) / 0.86 var(--ff-display);
+		text-transform: uppercase;
+	}
+
+	.act-finale .fw {
+		display: inline-flex;
+		white-space: nowrap;
+	}
+
+	.act-finale .ch {
+		display: inline-block;
+		white-space: pre;
+		background: linear-gradient(180deg, #ccff00 0%, #ccff00 55%, rgba(204, 255, 0, 0.35) 100%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		-webkit-text-fill-color: transparent;
+		transform: translateY(110%);
+		opacity: 0;
+	}
+
+	.act.is-in .act-finale .ch {
+		animation:
+			textSlide 0.9s var(--ease-out) calc(1.1s + var(--i) * 30ms) forwards,
+			glitch 6s steps(1) calc(3s + var(--i) * 30ms) infinite;
+	}
+
+	/* =========================================================
+	   SEGUNDA DOBRA · LINHA DO TEMPO SAGRADA
+	   Fio de luz com ramificações que crescem e são podadas
+	   ========================================================= */
+	/* Altura = 1 tela + um trecho de rolagem por filme */
+	.saga {
+		position: relative;
+		height: calc(100svh + var(--n, 1) * 85svh);
+		background: var(--obsidian);
+	}
+
+	.saga-sticky {
+		position: sticky;
+		top: 0;
+		height: 100svh;
+		padding: var(--frame);
+	}
+
+	.saga-card {
+		position: relative;
+		height: calc(100svh - var(--frame) * 2);
+		min-height: 640px;
+		border-radius: var(--radius);
+		overflow: hidden;
+		isolation: isolate;
+		background: radial-gradient(120% 90% at 62% 50%, #14130f 0%, #070708 70%);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 40px 120px -40px rgba(255, 51, 0, 0.14);
+	}
+
+	/* Fundo: pôster ativo quase apagado + parallax do cursor */
+	.saga-bg img {
+		position: absolute;
+		inset: -5%;
+		width: 110%;
+		height: 110%;
+		object-fit: cover;
+		object-position: 50% 22%;
+		opacity: 0;
+		filter: blur(10px) brightness(0.32) saturate(0.6);
+		transform: scale(1.14);
+		transition: opacity 1.1s var(--ease-out), transform 2.6s var(--ease-out);
+	}
+
+	.saga-bg img.is-active {
+		opacity: 0.8;
+		transform: translate3d(var(--bx, 0px), var(--by, 0px), 0) scale(1.02);
+	}
+
+	.saga-shade {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		pointer-events: none;
+		background:
+			linear-gradient(90deg, rgba(9, 9, 11, 0.96) 0%, rgba(9, 9, 11, 0.8) 30%, rgba(9, 9, 11, 0.25) 56%, rgba(9, 9, 11, 0.55) 100%),
+			linear-gradient(to bottom, rgba(9, 9, 11, 0.6) 0%, transparent 22%, transparent 78%, rgba(9, 9, 11, 0.85) 100%);
+	}
+
+	/* Reveal com desfoque ao entrar na tela (design system .reveal) */
+	.s-rv {
+		opacity: 0;
+		filter: blur(8px);
+		translate: 0 1.5rem;
+		transition:
+			opacity 1s var(--ease-out) var(--d, 0s),
+			filter 1s var(--ease-out) var(--d, 0s),
+			translate 1s var(--ease-out) var(--d, 0s);
+	}
+
+	.saga.is-in .s-rv {
+		opacity: 1;
+		filter: blur(0);
+		translate: 0 0;
+	}
+
+	/* Lente vermelha: os limites do multiverso */
+	.sg-bounds {
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 1.6s var(--ease-out) 0.3s;
+	}
+
+	.saga.is-in .sg-bounds {
+		opacity: 1;
+	}
+
+	.sg-bounds path {
+		fill: none;
+		vector-effect: non-scaling-stroke;
+	}
+
+	.sg-bounds-glow {
+		filter: blur(7px);
+		animation: sgBreathe 4.8s ease-in-out infinite alternate;
+	}
+
+	.sg-bounds-glow path {
+		stroke: var(--ember);
+		stroke-width: 7;
+		opacity: 0.55;
+	}
+
+	.sg-bounds-line path {
+		stroke: var(--ember);
+		stroke-width: 1.6;
+		opacity: 0.9;
+	}
+
+	.sg-bounds-dash path {
+		stroke: rgba(255, 51, 0, 0.4);
+		stroke-width: 1;
+		stroke-dasharray: 2 12;
+	}
+
+	@keyframes sgBreathe {
+		from { opacity: 0.45; }
+		to { opacity: 1; }
+	}
+
+	/* Palco do fio: o lado esquerdo some sob o texto */
+	.sg-stage {
+		position: absolute;
+		inset: 0;
+		z-index: 3;
+		overflow: hidden;
+		container-type: size;
+		-webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.12) 24%, #000 48%, #000 93%, transparent 100%);
+		mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.12) 24%, #000 48%, #000 93%, transparent 100%);
+	}
+
+	.sg-track {
+		position: absolute;
+		left: 0;
+		top: 0;
+		height: 100cqh;
+		width: calc(100cqh * var(--w) / 1000);
+		transform: translate3d(var(--tx, 0px), 0, 0);
+		will-change: transform;
+	}
+
+	.sg-svg {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+		pointer-events: none;
+	}
+
+	.sg-svg path {
+		fill: none;
+		stroke-linecap: round;
+	}
+
+	/* Entrada: o fio se acende da esquerda para a direita */
+	.sg-glow,
+	.sg-lines,
+	.sg-pulse {
+		clip-path: inset(0 100% 0 0);
+		transition: clip-path 2.8s var(--ease-out) 0.2s;
+	}
+
+	.saga.is-in .sg-glow,
+	.saga.is-in .sg-lines,
+	.saga.is-in .sg-pulse {
+		clip-path: inset(0 0 0 0);
+	}
+
+	.sg-glow {
+		filter: blur(9px);
+	}
+
+	.sg-glow path {
+		stroke: var(--acid);
+		stroke-width: 18;
+		opacity: 0.42;
+	}
+
+	.sg-core {
+		stroke: #fffef2;
+		stroke-width: 3.4;
+	}
+
+	.sg-lines {
+		filter: drop-shadow(0 0 5px rgba(204, 255, 0, 0.85)) drop-shadow(0 0 16px rgba(204, 255, 0, 0.35));
+	}
+
+	/* Fios que se enroscam no principal (referência 1) */
+	.sg-twist {
+		stroke-width: 1.2;
+	}
+
+	.sg-twist--a {
+		stroke: var(--ember);
+		opacity: 0.7;
+	}
+
+	.sg-twist--b {
+		stroke: var(--bone);
+		opacity: 0.28;
+	}
+
+	/* Faíscas correndo pelo fio */
+	.sg-pulse {
+		filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.9));
+	}
+
+	.sg-pulse path {
+		stroke: #fff;
+		stroke-width: 5;
+		stroke-dasharray: 0.006 0.094;
+		animation: sgPulse 3.2s linear infinite;
+	}
+
+	@keyframes sgPulse {
+		to { stroke-dashoffset: -0.1; }
+	}
+
+	/* Ramificações: crescem ao se aproximar (JS controla o dashoffset) */
+	.sg-branches {
+		filter: drop-shadow(0 0 3px rgba(255, 51, 0, 0.55));
+	}
+
+	.sg-branch {
+		stroke: var(--bone);
+		opacity: 0.85;
+	}
+
+	.sg-branch path {
+		stroke-dasharray: 1;
+		stroke-dashoffset: 1;
+	}
+
+	/* Podada: pisca em Ember e se apaga */
+	.sg-branch.is-pruned {
+		animation: sgPrune 0.9s var(--ease-out) forwards;
+	}
+
+	@keyframes sgPrune {
+		0% { stroke: var(--bone); opacity: 0.85; }
+		22% { stroke: var(--ember); opacity: 1; }
+		100% { stroke: var(--ember); opacity: 0; }
+	}
+
+	/* Filmes: nó sobre o fio + pôster pendurado por uma linha de circuito */
+	.sg-film {
+		position: absolute;
+		left: calc(var(--fx) * 1%);
+		top: calc(var(--fy) * 1%);
+		width: 0;
+		height: 0;
+		z-index: 2;
+	}
+
+	.sg-node {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: max(40px, 5.4cqh);
+		aspect-ratio: 1;
+		translate: -50% -50%;
+		display: grid;
+		place-items: center;
+		border-radius: 999px;
+		background: radial-gradient(circle, #1b1b12 0 58%, #0c0c0a 60%);
+		border: 1px solid rgba(204, 255, 0, 0.55);
+		box-shadow: 0 0 0 5px rgba(9, 9, 11, 0.9), 0 0 26px rgba(204, 255, 0, 0.35);
+		cursor: pointer;
+		transition: background 0.5s, box-shadow 0.5s, transform 0.6s var(--ease-elastic);
+	}
+
+	.sg-node-n {
+		position: relative;
+		font: 500 max(10px, 1.15cqh) / 1 var(--ff-mono);
+		letter-spacing: 0.08em;
+		color: var(--acid);
+		transition: color 0.4s;
+	}
+
+	.sg-node .radar-ring {
+		border-color: rgba(204, 255, 0, 0.7);
+		opacity: 0;
+		animation-play-state: paused;
+	}
+
+	.sg-film.is-active .sg-node {
+		background: var(--acid);
+		transform: scale(1.18);
+		box-shadow: 0 0 0 5px rgba(9, 9, 11, 0.9), 0 0 40px rgba(204, 255, 0, 0.8), 0 0 90px rgba(204, 255, 0, 0.35);
+	}
+
+	.sg-film.is-active .sg-node-n {
+		color: var(--ink);
+	}
+
+	.sg-film.is-active .sg-node .radar-ring {
+		opacity: 1;
+		animation-play-state: running;
+	}
+
+	/* Linha de circuito: do nó até o pôster, com o "tique" horizontal */
+	.sg-leader {
+		position: absolute;
+		left: 0;
+		width: 1px;
+		height: 7cqh;
+		background: linear-gradient(var(--dir, to top), rgba(204, 255, 0, 0.9), rgba(204, 255, 0, 0.15));
+	}
+
+	.sg-leader::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		width: 3cqh;
+		height: 1px;
+		background: rgba(204, 255, 0, 0.5);
+	}
+
+	.sg-film--up .sg-leader {
+		bottom: 2.7cqh;
+	}
+
+	.sg-film--up .sg-leader::after {
+		top: 0;
+	}
+
+	.sg-film--down .sg-leader {
+		--dir: to bottom;
+		top: 2.7cqh;
+	}
+
+	.sg-film--down .sg-leader::after {
+		bottom: 0;
+	}
+
+	.sg-card {
+		position: absolute;
+		left: 0;
+		width: 19cqh;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+		translate: -50% 0;
+		perspective: 1200px;
+		transform: scale(0.8);
+		filter: grayscale(0.9) brightness(0.6);
+		transition: transform 0.9s var(--ease-out), filter 0.7s var(--ease-out);
+	}
+
+	.sg-film--up .sg-card {
+		bottom: 9.6cqh;
+		transform-origin: 50% 100%;
+	}
+
+	.sg-film--down .sg-card {
+		top: 9.6cqh;
+		transform-origin: 50% 0%;
+	}
+
+	.sg-film.is-active .sg-card,
+	.sg-card:hover {
+		transform: scale(1);
+		filter: none;
+	}
+
+	.sg-card:focus-visible {
+		outline: none;
+	}
+
+	.sg-card:focus-visible .sg-poster {
+		outline: 2px solid var(--acid);
+		outline-offset: 4px;
+	}
+
+	/* .poster + .tilt-card do design system */
+	.sg-poster {
+		position: relative;
+		display: block;
+		aspect-ratio: 3 / 4.25;
+		border-radius: 12px;
+		overflow: hidden;
+		background: #111;
+		box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+		transition: transform 0.5s var(--ease-out), box-shadow 0.6s;
+		will-change: transform;
+	}
+
+	.sg-film.is-active .sg-poster {
+		box-shadow: 0 0 0 1px rgba(204, 255, 0, 0.5), 0 0 60px -10px rgba(204, 255, 0, 0.45), 0 30px 60px -20px rgba(0, 0, 0, 0.7);
+	}
+
+	.sg-poster img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+		transition: transform 1.2s var(--ease-out);
+	}
+
+	.sg-poster::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.3) 45%, transparent 60%);
+		transform: translateX(-120%);
+		transition: transform 1s var(--ease-out);
+		pointer-events: none;
+	}
+
+	.sg-card:hover .sg-poster::after {
+		transform: translateX(120%);
+	}
+
+	.sg-card:hover .sg-poster img {
+		transform: scale(1.05);
+	}
+
+	/* Rótulo ao lado do pôster (como "STAGE 01" da referência 1) */
+	.sg-meta {
+		position: absolute;
+		left: calc(100% + 2.4cqh);
+		width: 30cqh;
+		display: grid;
+		gap: 0.9cqh;
+		opacity: 0.45;
+		transition: opacity 0.6s;
+	}
+
+	.sg-film--up .sg-meta {
+		bottom: 0;
+	}
+
+	.sg-film--down .sg-meta {
+		top: 0;
+	}
+
+	.sg-film.is-active .sg-meta {
+		opacity: 1;
+	}
+
+	/* Em telas estreitas o rótulo seria cortado na borda; o título já aparece no texto à esquerda */
+	@media (max-width: 1200px) {
+		.sg-meta {
+			display: none;
+		}
+	}
+
+	.sg-meta-cap {
+		font: 500 max(9px, 1.05cqh) / 1 var(--ff-mono);
+		letter-spacing: 0.28em;
+		text-transform: uppercase;
+		color: var(--acid);
+	}
+
+	.sg-meta-title {
+		font: 900 max(1.1rem, 3.3cqh) / 0.9 var(--ff-display);
+		text-transform: uppercase;
+	}
+
+	.sg-meta-year {
+		font: 400 max(0.85rem, 1.6cqh) / 1 var(--ff-body);
+		color: rgba(255, 255, 255, 0.65);
+	}
+
+	/* Ano-fantasma gigante do lado oposto (como os "Q1/Q2" da referência 1) */
+	.sg-year {
+		position: absolute;
+		left: 0;
+		translate: -50% 0;
+		font: 900 21cqh / 0.8 var(--ff-display);
+		white-space: nowrap;
+		color: transparent;
+		-webkit-text-stroke: 1px rgba(245, 245, 240, 0.14);
+		pointer-events: none;
+		transition: -webkit-text-stroke-color 0.8s;
+	}
+
+	.sg-film--up .sg-year {
+		top: 7cqh;
+	}
+
+	.sg-film--down .sg-year {
+		bottom: 7cqh;
+	}
+
+	.sg-film.is-active .sg-year {
+		-webkit-text-stroke-color: rgba(204, 255, 0, 0.32);
+	}
+
+	/* Texto do filme ativo */
+	.saga-copy {
+		position: absolute;
+		z-index: 5;
+		left: var(--gutter);
+		top: 50%;
+		translate: 0 -50%;
+		width: min(36vw, 560px);
+	}
+
+	.saga-eyebrow {
+		display: inline-flex;
+		align-items: center;
+		gap: 12px;
+		margin: 0;
+		font: 500 clamp(10px, 0.85vw, 12px) / 1 var(--ff-mono);
+		letter-spacing: 0.28em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.78);
+	}
+
+	.saga-eyebrow-sep {
+		width: 24px;
+		height: 1px;
+		background: rgba(255, 255, 255, 0.35);
+	}
+
+	.pulse-dot {
+		position: relative;
+		width: 6px;
+		height: 6px;
+		border-radius: 999px;
+		background: var(--acid);
+		color: var(--acid);
+	}
+
+	.pulse-dot::after {
+		content: '';
+		position: absolute;
+		inset: -4px;
+		border-radius: 999px;
+		border: 1px solid currentColor;
+		animation: radar 2s var(--ease-out) infinite;
+	}
+
+	.saga-title {
+		margin: clamp(18px, 2.2vw, 28px) 0 0;
+		font: 900 clamp(2.8rem, 6.2vw, 7.4rem) / 0.86 var(--ff-display);
+		text-transform: uppercase;
+		letter-spacing: -0.005em;
+		transition: opacity 0.3s ease, filter 0.3s ease;
+	}
+
+	/* Títulos longos (ex.: Capitão América: O Primeiro Vingador) encolhem para caber com a sinopse */
+	.saga-title.is-long {
+		font-size: clamp(2.2rem, 4.1vw, 4.9rem);
+	}
+
+	.saga-title .t-line {
+		display: block;
+		overflow: hidden;
+		/* acentos em cima, cedilha (Ç) embaixo */
+		padding: 0.16em 0.03em 0.27em;
+		margin: -0.16em 0 -0.24em;
+	}
+
+	.saga-title .t-word {
+		display: inline-block;
+		white-space: nowrap;
+	}
+
+	.saga-title .t-ch {
+		display: inline-block;
+		padding-bottom: 0.26em;
+		margin-bottom: -0.26em;
+		transform: translateY(110%);
+		opacity: 0;
+	}
+
+	/* Linha 1 — branco que se dissolve; linha 2 — ano vazado em Acid */
+	.saga-title .t-line--fill .t-ch {
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.75) 50%, rgba(255, 255, 255, 0.2) 100%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		-webkit-text-fill-color: transparent;
+	}
+
+	.saga-title .t-line--outline .t-ch {
+		color: transparent;
+		-webkit-text-stroke: 1.5px var(--acid);
+	}
+
+	.saga.is-in .saga-title .t-ch {
+		animation: textSlide 0.9s var(--ease-out) calc(0.15s + var(--i) * 32ms) forwards;
+	}
+
+	.saga-synopsis {
+		margin: clamp(22px, 2.6vw, 34px) 0 0;
+		max-width: 50ch;
+		font: 400 clamp(0.95rem, 1.04vw, 1.06rem) / 1.65 var(--ff-body);
+		color: rgba(255, 255, 255, 0.74);
+	}
+
+	.saga-synopsis[hidden] {
+		display: none;
+	}
+
+	/* Troca de filme: texto sai com desfoque antes do novo entrar */
+	.saga-copy.is-swapping .saga-title {
+		opacity: 0;
+		filter: blur(6px);
+	}
+
+	.saga-copy .saga-synopsis,
+	.saga-copy [data-saga-chapter] {
+		transition: opacity 0.4s ease, filter 0.4s ease;
+	}
+
+	.saga-copy.is-swapping .saga-synopsis,
+	.saga-copy.is-swapping [data-saga-chapter] {
+		opacity: 0;
+		filter: blur(8px);
+	}
+
+	/* HUD do fio */
+	.sg-hud {
+		position: absolute;
+		z-index: 6;
+		top: clamp(24px, 5vh, 48px);
+		right: var(--gutter);
+		display: grid;
+		justify-items: end;
+		gap: 10px;
+		font: 500 10px/1 var(--ff-mono);
+		letter-spacing: 0.28em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.55);
+	}
+
+	.sg-hud-row {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.sg-hud b {
+		font-weight: 500;
+		color: #fff;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.sg-hud-dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 999px;
+		background: var(--ember);
+		box-shadow: 0 0 10px var(--ember);
+		animation: sgBreathe 1.2s ease-in-out infinite alternate;
+	}
+
+	@media (max-width: 900px) {
+		.saga-card {
+			display: flex;
+			flex-direction: column;
+			gap: 20px;
+			padding: 72px var(--gutter) 28px;
+		}
+
+		.saga-copy {
+			position: relative;
+			left: auto;
+			right: auto;
+			top: auto;
+			bottom: auto;
+			width: auto;
+			translate: none;
+		}
+
+		.sg-stage {
+			position: relative;
+			inset: auto;
+			flex: 1 1 0;
+			min-height: 0;
+			margin-inline: calc(var(--gutter) * -1);
+			-webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 14%, #000 86%, transparent 100%);
+			mask-image: linear-gradient(90deg, transparent 0%, #000 14%, #000 86%, transparent 100%);
+		}
+
+		.sg-card {
+			width: 27cqh;
+		}
+
+		.sg-meta,
+		.sg-hud {
+			display: none;
+		}
+
+		.sg-year {
+			font-size: 17cqh;
+		}
+
+		.saga-title {
+			font-size: clamp(2.4rem, 12vw, 3.6rem);
+		}
+
+		.saga-synopsis {
+			display: -webkit-box;
+			-webkit-line-clamp: 4;
+			-webkit-box-orient: vertical;
+			overflow: hidden;
+			font-size: 0.9rem;
+			margin-top: 16px;
+		}
+
+		.saga-shade {
+			background: linear-gradient(to bottom, rgba(9, 9, 11, 0.9) 0%, rgba(9, 9, 11, 0.55) 45%, rgba(9, 9, 11, 0.8) 100%);
+		}
+	}
+
+	/* =========================================================
+	   RESPONSIVO
+	   ========================================================= */
+	@media (max-width: 1024px) {
+		.nav-links {
+			display: none;
+		}
+
+		.hero-nav {
+			grid-template-columns: 1fr auto;
+		}
+	}
+
+	@media (max-width: 760px) {
+		.hud--left {
+			display: none;
+		}
+
+		.hud--right span {
+			display: none;
+		}
+
+		.act {
+			min-height: 92svh;
+			padding: 0 var(--gutter);
+		}
+
+		.act--right,
+		.act--center {
+			justify-items: start;
+			text-align: left;
+		}
+
+		.act--right .act-body,
+		.act--center .act-body {
+			margin-inline: 0;
+		}
+
+		.act-finale {
+			justify-content: flex-start;
+		}
+
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+			transition-delay: 0s !important;
+		}
+
+		.hero-card {
+			clip-path: none;
+		}
+
+		.act-head .w,
+		.act-finale .ch {
+			transform: none !important;
+			opacity: 1 !important;
+		}
+
+		.saga-title .t-ch {
+			transform: none !important;
+			opacity: 1 !important;
+		}
+
+		.s-rv {
+			opacity: 1;
+			filter: none;
+		}
+
+		.act-body p {
+			opacity: 1;
+			filter: none;
+			translate: none;
+		}
+	}
+</style>
+
+<script>
+	const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	const story = document.querySelector<HTMLElement>('[data-story]');
+	const hero = document.querySelector<HTMLElement>('[data-hero]');
+	const track = document.querySelector<HTMLElement>('[data-acts]');
+	const video = document.querySelector<HTMLVideoElement>('[data-hero-video]');
+	const timecode = document.querySelector<HTMLElement>('[data-timecode]');
+	const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+
+	if (story && hero && track && video) {
+		// 1 · Abertura: espera o vídeo (máx. 1.4s) e abre a fenda cinemascope
+		let opened = false;
+		const open = () => {
+			if (opened) return;
+			opened = true;
+			// setTimeout (não rAF): abas em segundo plano não disparam rAF e a fenda ficaria fechada
+			window.setTimeout(() => hero.classList.add('is-ready'), 60);
+			// o Ato 01 começa a surgir enquanto a fenda termina de abrir
+			window.setTimeout(startReveal, reduce ? 0 : 900);
+		};
+		if (video.readyState >= 2) open();
+		video.addEventListener('loadeddata', open, { once: true });
+		window.setTimeout(open, 1400);
+
+		// iOS/Safari só pinta quadros de um vídeo que já foi "tocado" uma vez
+		video.play().then(() => video.pause()).catch(() => {});
+
+		// 2 · Atos: revelação ao entrar
+		const items = [...track.querySelectorAll<HTMLElement>('[data-act]')];
+
+		function startReveal() {
+			if (reduce) {
+				items.forEach((el) => el.classList.add('is-in'));
+				return;
+			}
+			const io = new IntersectionObserver(
+				(entries) =>
+					entries.forEach((e) => {
+						if (!e.isIntersecting) return;
+						e.target.classList.add('is-in');
+						io.unobserve(e.target);
+					}),
+				{ rootMargin: '0px 0px -30% 0px' },
+			);
+			items.forEach((el) => io.observe(el));
+		}
+
+		// 3 · Rolagem → progresso da história (--sp), saída da primeira tela (--intro) e parallax dos atos (--p)
+		let progress = 0;
+		const update = () => {
+			const vh = window.innerHeight;
+			const sr = story.getBoundingClientRect();
+			progress = clamp(-sr.top / (sr.height - vh), 0, 1);
+			const intro = clamp(-sr.top / (vh * 0.6), 0, 1);
+
+			let active = 0;
+			let nearest = Infinity;
+			items.forEach((el, i) => {
+				const r = el.getBoundingClientRect();
+				const p = (r.top + r.height / 2 - vh / 2) / vh;
+				const d = Math.abs(p);
+				if (!reduce) {
+					el.style.setProperty('--p', clamp(p, -1.5, 1.5).toFixed(3));
+					el.style.setProperty('--o', clamp(1.25 - d * 1.1, 0, 1).toFixed(3));
+				}
+				if (d < nearest) {
+					nearest = d;
+					active = i;
+				}
+			});
+
+			story.style.setProperty('--sp', progress.toFixed(4));
+			story.style.setProperty('--intro', intro.toFixed(3));
+			story.style.setProperty('--gx', active === items.length - 1 ? '50%' : active % 2 ? '72%' : '28%');
+			hero.classList.toggle('is-past-intro', intro > 0.5);
+		};
+
+		let pending = false;
+		const schedule = () => {
+			if (pending) return;
+			pending = true;
+			requestAnimationFrame(() => {
+				update();
+				pending = false;
+			});
+		};
+		window.addEventListener('scroll', schedule, { passive: true });
+		window.addEventListener('resize', schedule);
+		update();
+
+		// 4 · Vídeo controlado pela rolagem (scrub) com suavização — só busca um quadro novo quando o anterior terminou
+		const fmt = (t: number) => {
+			const m = Math.floor(t / 60).toString().padStart(2, '0');
+			const s = (t % 60).toFixed(1).padStart(4, '0');
+			return `${m}:${s}`;
+		};
+		let shown = 0;
+		const scrub = () => {
+			const dur = video.duration;
+			if (dur && !reduce) {
+				const target = progress * (dur - 0.05);
+				shown += (target - shown) * 0.14;
+				if (Math.abs(target - shown) < 0.002) shown = target;
+				if (!video.seeking && Math.abs(video.currentTime - shown) > 0.01) {
+					video.currentTime = shown;
+				}
+			}
+			if (dur && timecode) timecode.textContent = fmt(video.currentTime);
+			requestAnimationFrame(scrub);
+		};
+		requestAnimationFrame(scrub);
+
+		// 5 · Spotlight e leve parallax do vídeo pelo cursor (apenas ponteiro fino)
+		if (!reduce && window.matchMedia('(pointer: fine)').matches) {
+			window.addEventListener('mousemove', (e) => {
+				const r = hero.getBoundingClientRect();
+				const x = e.clientX - r.left;
+				const y = e.clientY - r.top;
+				hero.style.setProperty('--hx', `${x}px`);
+				hero.style.setProperty('--hy', `${y}px`);
+				hero.style.setProperty('--vx', `${(x / r.width - 0.5) * 14}px`);
+				hero.style.setProperty('--vy', `${(y / r.height - 0.5) * 10}px`);
+			});
+
+		}
+	}
+
+	// 6 · Segunda dobra — Linha do Tempo Sagrada (câmera guiada pela rolagem ao longo do fio)
+	const saga = document.querySelector<HTMLElement>('[data-saga]');
+	if (saga) {
+		const films = [...saga.querySelectorAll<HTMLElement>('[data-film]')];
+		const bgs = [...saga.querySelectorAll<HTMLElement>('[data-film-bg]')];
+		const stage = saga.querySelector<HTMLElement>('[data-sg-stage]');
+		const track = saga.querySelector<HTMLElement>('[data-sg-track]');
+		const copy = saga.querySelector<HTMLElement>('[data-saga-copy]');
+		const titleEl = saga.querySelector<HTMLElement>('[data-saga-title]');
+		const synopsis = saga.querySelector<HTMLElement>('[data-saga-synopsis]');
+		const chapter = saga.querySelector<HTMLElement>('[data-saga-chapter]');
+		const tHud = saga.querySelector<HTMLElement>('[data-sg-t]');
+		const prunedHud = saga.querySelector<HTMLElement>('[data-sg-pruned]');
+		const mobile = window.matchMedia('(max-width: 900px)');
+		const total = films.length;
+		const nodeX = films.map((f) => Number(f.dataset.x));
+		const years = films.map((f) => Number(f.dataset.year));
+		const branches = [...saga.querySelectorAll<SVGGElement>('[data-bx]')].map((g) => ({
+			g,
+			x: Number(g.dataset.bx),
+			paths: [...g.querySelectorAll<SVGPathElement>('path')],
+			grown: -1,
+			pruned: false,
+		}));
+		const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+		const ease = (t: number) => t * t * (3 - 2 * t);
+		let index = -1;
+		let inView = false;
+
+		// Título: linha 1 = nome (preenchido), linha 2 = ano (vazado); letra por letra (textSlide)
+		const renderTitle = (title: string, year: string) => {
+			if (!titleEl) return;
+			let n = 0;
+			const line = (text: string, kind: string) => {
+				const el = document.createElement('span');
+				el.className = `t-line t-line--${kind}`;
+				el.setAttribute('aria-hidden', 'true');
+				text.split(' ').forEach((word, wi, arr) => {
+					const w = document.createElement('span');
+					w.className = 't-word';
+					[...word].forEach((ch) => {
+						const c = document.createElement('span');
+						c.className = 't-ch';
+						c.style.setProperty('--i', String(n++));
+						c.textContent = ch;
+						w.appendChild(c);
+					});
+					el.appendChild(w);
+					if (wi < arr.length - 1) el.appendChild(document.createTextNode(' '));
+				});
+				return el;
+			};
+			titleEl.replaceChildren(line(title, 'fill'), line(year, 'outline'));
+			titleEl.classList.toggle('is-long', title.length > 18);
+			titleEl.setAttribute('aria-label', `${title} (${year})`);
+		};
+
+		const go = (i: number) => {
+			if (i === index) return;
+			const first = index === -1;
+			index = i;
+
+			films.forEach((el, k) => {
+				el.classList.toggle('is-active', k === i);
+				el.querySelector('.sg-card')?.setAttribute('aria-current', k === i ? 'true' : 'false');
+			});
+			bgs.forEach((el, k) => el.classList.toggle('is-active', k === i));
+
+			const d = films[i].dataset;
+
+			const apply = () => {
+				renderTitle(d.title ?? '', d.year ?? '');
+				if (synopsis) {
+					synopsis.textContent = d.synopsis ?? '';
+					synopsis.hidden = !d.synopsis;
+				}
+				if (chapter) chapter.textContent = `Capítulo ${d.n}`;
+				copy?.classList.remove('is-swapping');
+			};
+			if (first || reduce) apply();
+			else {
+				copy?.classList.add('is-swapping');
+				window.setTimeout(apply, 320);
+			}
+		};
+
+		// Progresso da rolagem → posição da câmera no fio (unidades do mundo).
+		// A câmera "repousa" em cada nó por um trecho e viaja entre eles com easing.
+		const LEAD = 700;
+		const progressOf = () => {
+			const r = saga.getBoundingClientRect();
+			return clamp01(-r.top / (r.height - window.innerHeight));
+		};
+		const frame = () => {
+			const p = progressOf();
+			saga.style.setProperty('--k', p.toFixed(4));
+
+			const u = p * total - 0.5;
+			let cam: number;
+			let year: number;
+			if (u <= 0) {
+				cam = nodeX[0] + u * LEAD;
+				year = years[0];
+			} else if (u >= total - 1) {
+				cam = nodeX[total - 1] + (u - (total - 1)) * LEAD;
+				year = years[total - 1];
+			} else {
+				const b = Math.floor(u);
+				const e = ease(clamp01((u - b - 0.2) / 0.6));
+				cam = nodeX[b] + (nodeX[b + 1] - nodeX[b]) * e;
+				year = years[b] + (years[b + 1] - years[b]) * e;
+			}
+			go(Math.min(total - 1, Math.max(0, Math.round(u))));
+
+			if (stage && track) {
+				const s = stage.clientHeight / 1000;
+				const focus = stage.clientWidth * (mobile.matches ? 0.5 : 0.62);
+				track.style.setProperty('--tx', `${(focus - cam * s).toFixed(1)}px`);
+			}
+
+			// Variantes: crescem à frente da câmera, são podadas depois que ela passa
+			let pruned = 0;
+			branches.forEach((b) => {
+				const d = cam - b.x;
+				const g = reduce ? 1 : Math.round(clamp01((d + 720) / 540) * 200) / 200;
+				if (g !== b.grown) {
+					b.grown = g;
+					b.paths.forEach((path, k) => {
+						const gk = k === 0 ? g : clamp01(g * 1.8 - 0.8);
+						path.style.strokeDashoffset = String(1 - gk);
+					});
+				}
+				const isPruned = d > 420;
+				if (isPruned) pruned++;
+				if (isPruned !== b.pruned) {
+					b.pruned = isPruned;
+					b.g.classList.toggle('is-pruned', isPruned);
+				}
+			});
+
+			if (tHud) tHud.textContent = year.toFixed(1);
+			if (prunedHud) prunedHud.textContent = String(pruned).padStart(3, '0');
+		};
+
+		let ticking = false;
+		const schedule = () => {
+			if (ticking) return;
+			ticking = true;
+			requestAnimationFrame(() => {
+				frame();
+				ticking = false;
+			});
+		};
+		window.addEventListener('scroll', schedule, { passive: true });
+		window.addEventListener('resize', schedule);
+
+		// Nó, pôster e teclado rolam até o trecho do filme
+		const scrollToFilm = (target: number) => {
+			const i = Math.min(total - 1, Math.max(0, target));
+			const top = saga.getBoundingClientRect().top + window.scrollY;
+			const span = saga.offsetHeight - window.innerHeight;
+			window.scrollTo({ top: top + span * ((i + 0.5) / total), behavior: reduce ? 'auto' : 'smooth' });
+		};
+		films.forEach((el, k) =>
+			el.querySelectorAll('.sg-card, .sg-node').forEach((b) => b.addEventListener('click', () => scrollToFilm(k))),
+		);
+
+		window.addEventListener('keydown', (e) => {
+			if (!inView) return;
+			const t = e.target as HTMLElement | null;
+			if (t && /INPUT|TEXTAREA|SELECT/.test(t.tagName)) return;
+			if (e.key === 'ArrowRight') scrollToFilm(index + 1);
+			if (e.key === 'ArrowLeft') scrollToFilm(index - 1);
+		});
+
+		const card = saga.querySelector<HTMLElement>('[data-saga-card]');
+		new IntersectionObserver(
+			([entry]) => {
+				inView = entry.isIntersecting;
+				if (inView) saga.classList.add('is-in');
+			},
+			{ threshold: 0.3 },
+		).observe(card ?? saga);
+
+		// Tilt no pôster ativo (±8°) + parallax do fundo pelo cursor — só ponteiro fino
+		if (!reduce && window.matchMedia('(pointer: fine)').matches) {
+			saga.querySelectorAll<HTMLElement>('[data-tilt-poster]').forEach((poster) => {
+				poster.addEventListener('mousemove', (e) => {
+					if (!poster.closest('.is-active')) return;
+					const r = poster.getBoundingClientRect();
+					const x = (e.clientX - r.left) / r.width - 0.5;
+					const y = (e.clientY - r.top) / r.height - 0.5;
+					poster.style.transform = `rotateY(${x * 16}deg) rotateX(${y * -16}deg)`;
+				});
+				poster.addEventListener('mouseleave', () => (poster.style.transform = ''));
+			});
+
+			saga.addEventListener('mousemove', (e) => {
+				const r = saga.getBoundingClientRect();
+				saga.style.setProperty('--bx', `${((e.clientX - r.left) / r.width - 0.5) * -24}px`);
+				saga.style.setProperty('--by', `${((e.clientY - r.top) / r.height - 0.5) * -16}px`);
+			});
+		}
+
+		frame();
+	}
+</script>
