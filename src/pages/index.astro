@@ -334,7 +334,12 @@ const fontFaces = `
 `;
 ---
 
-<Layout>
+<Layout
+	title="Vingadores Doomsday"
+	description="Assista ao trailer de Vingadores: Doomsday, percorra a linha do tempo de X-Men (2000) até o Doomsday e marque na agenda a estreia: 16 de dezembro de 2026."
+	image="/images/og-home.jpg"
+	imageAlt="Doutor Destino na névoa verde ao lado do título Vingadores: Doomsday e da data de estreia, 16.12.2026"
+>
 	<!-- JetBrains Mono (família mono do design system) -->
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -378,7 +383,8 @@ const fontFaces = `
 					<a href="#top" class="brand" aria-label="Vingadores: Doomsday — início">
 						<span class="brand-mark">
 							<span class="radar-ring"></span>
-							<img src={logoNiobio} alt="" width="32" height="32" />
+							<!-- Acima da dobra: busca imediata e com prioridade -->
+							<img src={logoNiobio} alt="" width="32" height="32" loading="eager" fetchpriority="high" decoding="async" />
 						</span>
 					</a>
 
@@ -403,13 +409,15 @@ const fontFaces = `
 
 		<!-- Trilha que gera a rolagem: o Ato 01 já ocupa a primeira tela -->
 		<div class="story-track" data-acts>
+			<!-- Hierarquia: h1 = assunto da página; h2 = seção; h3 = cada ato -->
 			<h1 id="story-title" class="sr-only">Vingadores: Doomsday</h1>
+			<h2 class="sr-only">A história</h2>
 
 			<div id="filme"></div>
 			{acts.map((a) => (
 				<article class={`act act--${a.align}`} data-act>
 					<div class="act-inner">
-						<h2 class="act-head" aria-label={a.head.join(' ')}>
+						<h3 class="act-head" aria-label={a.head.join(' ')}>
 							{a.lines.map((words, li) => (
 								<span class={`hl hl--${li === 0 ? 'outline' : 'fill'}`} aria-hidden="true" data-mist>
 									{words.map((wd) => (
@@ -417,7 +425,7 @@ const fontFaces = `
 									))}
 								</span>
 							))}
-						</h2>
+						</h3>
 						<div class="act-body">
 							{a.body.map((b) => <p data-mist>{b}</p>)}
 						</div>
@@ -440,7 +448,8 @@ const fontFaces = `
 		</section>
 
 		<!-- ================= SEGUNDA DOBRA · LINHA DO TEMPO SAGRADA ================= -->
-		<section class="saga" id="linha-do-tempo" aria-label="Linha do tempo dos filmes" data-saga style={`--n:${films.length}`}>
+		<section class="saga" id="linha-do-tempo" aria-labelledby="saga-heading" data-saga style={`--n:${films.length}`}>
+			<h2 class="sr-only" id="saga-heading">Linha do tempo</h2>
 			<!-- Palco fixo: a rolagem conduz a câmera ao longo do fio -->
 			<div class="saga-sticky">
 			<div class="saga-card" data-saga-card>
@@ -528,7 +537,7 @@ const fontFaces = `
 					<p class="saga-eyebrow s-rv" style="--d:0.1s">
 						<span class="pulse-dot"></span>Linha do tempo <span class="saga-eyebrow-sep"></span> <span data-saga-chapter>Capítulo {films[0].n}</span>
 					</p>
-					<h2 class="saga-title" data-saga-title aria-label={`${films[0].title} (${films[0].year})`}></h2>
+					<h3 class="saga-title" data-saga-title aria-label={`${films[0].title} (${films[0].year})`}></h3>
 					<p class="saga-synopsis s-rv" style="--d:0.5s" data-saga-synopsis>{films[0].synopsis}</p>
 					<!-- Reprodução automática: enche em 10s até o próximo filme -->
 					<div class="saga-auto" aria-hidden="true" data-saga-auto><span class="saga-auto-fill"></span></div>
@@ -609,7 +618,7 @@ const fontFaces = `
 		</section>
 
 		<!-- ================= QUARTA DOBRA · MARQUEE DE VÍDEO (sem overlay) ================= -->
-		<section class="final" aria-label="Vídeo final" data-final>
+		<section class="final" aria-labelledby="release-heading" data-final>
 			<!-- Fonte única: um só vídeo é decodificado; cada cópia da faixa recebe o quadro atual (canvas) -->
 			<video class="final-source" src={finalVideo} muted loop playsinline preload="auto" aria-hidden="true" data-final-video></video>
 
@@ -628,7 +637,7 @@ const fontFaces = `
 
 			<!-- Estreia: contagem regressiva + botão para salvar a data no calendário -->
 			<div class="release" data-release data-target="2026-12-16T00:00:00-03:00">
-				<p class="release-date"><span class="pulse-dot"></span>Estreia <span class="saga-eyebrow-sep"></span> 16 de dezembro de 2026</p>
+				<h2 class="release-date" id="release-heading"><span class="pulse-dot"></span>Estreia <span class="saga-eyebrow-sep"></span> 16 de dezembro de 2026</h2>
 
 				<div class="countdown" aria-label="Contagem regressiva para a estreia de Vingadores: Doomsday">
 					{[
@@ -3286,63 +3295,6 @@ const fontFaces = `
 			items.forEach((el) => io.observe(el));
 		}
 
-		// 2b · Último ato ("Mas o fim não começou agora… Tudo está conectado."):
-		// depois da névoa revelar tudo e um tempo de leitura, passa sozinho para a linha do tempo.
-		// Se o usuário rolar durante a espera, cancela; se ele parar e o ato continuar na tela, volta a contar.
-		const lastAct = items[items.length - 1];
-		const sagaSection = document.querySelector<HTMLElement>('#linha-do-tempo');
-		if (lastAct && sagaSection) {
-			const HOLD_MS = 4500;
-			const GRACE_MS = 1200; // embalo da rolagem de quem acabou de chegar
-			let handoff = 0;
-			let rearm = 0;
-			let armedAt = 0;
-			let lastVisible = false;
-
-			const arm = () => {
-				window.clearTimeout(handoff);
-				armedAt = performance.now();
-				handoff = window.setTimeout(() => {
-					handoff = 0;
-					window.scrollTo({ top: sagaSection.getBoundingClientRect().top + window.scrollY, behavior: reduce ? 'auto' : 'smooth' });
-				}, HOLD_MS);
-			};
-			const disarm = () => {
-				window.clearTimeout(handoff);
-				window.clearTimeout(rearm);
-				handoff = 0;
-			};
-
-			new IntersectionObserver(
-				([e]) => {
-					lastVisible = e.isIntersecting;
-					if (lastVisible) {
-						if (!handoff) arm();
-					} else disarm();
-				},
-				{ threshold: 0.6 },
-			).observe(lastAct);
-
-			const userScrolled = () => {
-				if (!lastVisible || !handoff) {
-					// já cancelado: só reagenda a nova tentativa para quando ele parar
-					if (lastVisible) {
-						window.clearTimeout(rearm);
-						rearm = window.setTimeout(() => lastVisible && arm(), 1500);
-					}
-					return;
-				}
-				if (performance.now() - armedAt < GRACE_MS) return;
-				disarm();
-				rearm = window.setTimeout(() => lastVisible && arm(), 1500);
-			};
-			window.addEventListener('wheel', userScrolled, { passive: true });
-			window.addEventListener('touchmove', userScrolled, { passive: true });
-			window.addEventListener('keydown', (e) => {
-				if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) userScrolled();
-			});
-		}
-
 		// 3 · Rolagem → progresso da história (--sp), saída da primeira tela (--intro) e parallax dos atos (--p)
 		let progress = 0;
 		const update = () => {
@@ -3501,6 +3453,8 @@ const fontFaces = `
 		const LEAD = 700;
 		// Ligado mais abaixo: a reprodução automática acompanha se o palco está fixo na tela
 		let syncAuto: (pinned: boolean) => void = () => {};
+		// Ligado mais abaixo: no último filme (Doomsday), segue sozinho para o trailer
+		let syncLast: (pinned: boolean) => void = () => {};
 		const progressOf = () => {
 			const r = saga.getBoundingClientRect();
 			return clamp01(-r.top / (r.height - window.innerHeight));
@@ -3556,7 +3510,9 @@ const fontFaces = `
 			if (prunedHud) prunedHud.textContent = String(pruned).padStart(3, '0');
 
 			const r = saga.getBoundingClientRect();
-			syncAuto(r.top <= 1 && r.bottom >= window.innerHeight - 1);
+			const pinned = r.top <= 1 && r.bottom >= window.innerHeight - 1;
+			syncAuto(pinned);
+			syncLast(pinned);
 		};
 
 		let ticking = false;
@@ -3626,7 +3582,44 @@ const fontFaces = `
 			else if (!pinned && autoState === 'on') stopAuto('off');
 		};
 
+		// Último filme (Vingadores: Doomsday): 5s depois de chegar no pôster, segue sozinho para o trailer.
+		// Rolagem do usuário cancela; se ele parar e continuar no Doomsday, a contagem recomeça.
+		const trailerSection = document.querySelector<HTMLElement>('#trailer');
+		const LAST_MS = 5000;
+		let lastTimer = 0;
+		let lastRearm = 0;
+		let lastArmedAt = 0;
+		let onLast = false;
+		const armLast = () => {
+			window.clearTimeout(lastTimer);
+			lastArmedAt = performance.now();
+			lastTimer = window.setTimeout(() => {
+				lastTimer = 0;
+				if (!onLast || !trailerSection) return;
+				window.scrollTo({ top: trailerSection.getBoundingClientRect().top + window.scrollY, behavior: reduce ? 'auto' : 'smooth' });
+			}, LAST_MS);
+		};
+		const disarmLast = () => {
+			window.clearTimeout(lastTimer);
+			window.clearTimeout(lastRearm);
+			lastTimer = 0;
+		};
+		syncLast = (pinned) => {
+			const now = pinned && index === total - 1;
+			if (now === onLast) return;
+			onLast = now;
+			if (onLast) armLast();
+			else disarmLast();
+		};
+		const userScrolledOnLast = () => {
+			if (!onLast) return;
+			if (lastTimer && performance.now() - lastArmedAt < GRACE_MS) return;
+			disarmLast();
+			lastRearm = window.setTimeout(() => onLast && armLast(), 1500);
+		};
+
 		const userTookOver = (force = false) => {
+			userScrolledOnLast();
 			if (autoState !== 'on') return;
 			if (!force && performance.now() - autoSince < GRACE_MS) return;
 			stopAuto('off');
