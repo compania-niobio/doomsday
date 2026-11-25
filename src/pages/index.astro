@@ -78,26 +78,26 @@ const actsRaw = [
 	{
 		n: '01',
 		title: 'O presságio',
-		head: ['Tudo o que conhecemos', 'está prestes a mudar.'],
-		body: ['O equilíbrio entre os universos está desaparecendo.', 'E algo muito maior está despertando.'],
+		head: ['As regras', 'não se aplicam mais.'],
+		body: ['Tempo. Espaço. Realidade. Tudo está prestes a perder o significado.'],
 	},
 	{
 		n: '02',
 		title: 'A ameaça',
-		head: ['O maior perigo', 'não vem de outro mundo.'],
-		body: ['Ele vem de alguém que acredita ter o poder de decidir o destino de todos eles.'],
+		head: ['Não é uma invasão.', 'É uma substituição.'],
+		body: ['Quando o impossível se torna inevitável, até os heróis precisam decidir o que estão dispostos a perder.'],
 	},
 	{
 		n: '04',
 		title: 'O sacrifício',
-		head: ['Nenhuma vitória', 'vem sem um preço.'],
-		body: ['Alianças serão testadas.', 'Legados serão colocados à prova.', 'E o futuro nunca mais será o mesmo.'],
+		head: ['Salvar um universo', 'pode significar', 'condenar todos os outros.'],
+		body: ['Alianças serão quebradas. Legados serão testados. E nem todos voltarão para casa.'],
 	},
 	{
 		n: '05',
 		title: 'A conexão com a linha do tempo',
-		head: ['Mas o fim', 'não começou agora.'],
-		body: ['Cada batalha, cada escolha e cada sacrifício nos trouxeram até aqui.'],
+		head: ['Você acha que', 'tudo começa agora.'],
+		body: ['Mas cada escolha. Cada batalha. Cada sacrifício. Trouxe o universo exatamente até aqui.'],
 		finale: 'Tudo está conectado.',
 	},
 ];
@@ -419,9 +419,12 @@ const fontFaces = `
 			<!-- Rolo 00 · Prólogo: abertura fria com o título (h1 = assunto da página) -->
 			<div class="prologue" data-scene>
 				<div class="prologue-frame">
-					<h1 id="story-title" class="prologue-title" aria-label="Vingadores: Doomsday">
-						<span class="pt-kicker reveal" style="--d:1.1s" aria-hidden="true">Vingadores</span>
-						<span class="pt-main reveal" style="--d:1.35s" aria-hidden="true"><span class="pt-out">Dooms</span><span class="pt-acid">day</span></span>
+					<h1 id="story-title" class="prologue-title" aria-label="Vingadores: Doomsday — O universo não está morrendo. Está sendo reescrito.">
+						<span class="pt-main reveal" style="--d:1.1s" aria-hidden="true">
+							<span class="pt-line pt-out">O universo</span>
+							<span class="pt-line pt-out">não está morrendo.</span>
+							<span class="pt-line pt-acid">Está sendo reescrito.</span>
+						</span>
 					</h1>
 				</div>
 			</div>
@@ -952,19 +955,17 @@ const fontFaces = `
 		text-transform: uppercase;
 	}
 
-	.pt-kicker {
-		font: 700 clamp(0.95rem, 1.6vw, 1.5rem) / 1 var(--ff-display);
-		letter-spacing: 0.62em;
-		color: rgba(255, 255, 255, 0.82);
-		padding-left: 0.4vw;
-	}
-
 	.pt-main {
 		display: block;
-		font: 900 clamp(5rem, 20.5vw, 19rem) / 0.8 var(--ff-display);
-		letter-spacing: -0.015em;
+		font: 900 clamp(2.2rem, 7.6vw, 8.5rem) / 0.9 var(--ff-display);
+		letter-spacing: -0.01em;
 		margin-left: -0.04em;
 		padding-top: 0.08em;
+	}
+
+	.pt-line {
+		display: block;
+		width: fit-content;
 	}
 
 	.pt-out {
