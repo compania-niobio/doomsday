@@ -386,6 +386,9 @@ const fontFaces = `
 					))}
 				</div>
 
+				<!-- Transição para a linha do tempo: o quadro do vídeo se desfaz em areia (WebGL2) -->
+				<canvas class="hero-dust" aria-hidden="true" data-dust></canvas>
+
 				<!-- Atmosfera (design system: vignette) -->
 				<div class="hero-shade" aria-hidden="true"></div>
 				<div class="acts-shade" aria-hidden="true"></div>
@@ -854,9 +857,12 @@ const fontFaces = `
 		height: 100%;
 		border-radius: var(--radius);
 		overflow: hidden;
-		background: #000;
+		/* --dust (0→1): transição em areia para a linha do tempo; o cartão some junto com o vídeo */
+		background: rgba(0, 0, 0, calc(1 - var(--dust, 0)));
 		isolation: isolate;
-		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 40px 120px -40px rgba(204, 255, 0, 0.12);
+		box-shadow:
+			0 0 0 1px rgba(255, 255, 255, calc(0.06 * (1 - var(--dust, 0)))),
+			0 40px 120px -40px rgba(204, 255, 0, calc(0.12 * (1 - var(--dust, 0))));
 		/* Abertura em fenda cinemascope */
 		clip-path: inset(47% 0 47% 0 round var(--radius));
 		transition: clip-path 1.5s var(--ease-out), transform 0.2s linear;
@@ -926,6 +932,30 @@ const fontFaces = `
 
 	.is-ready .hero-video {
 		transform: scale(1);
+	}
+
+	/* Areia: o canvas assume o quadro do vídeo durante a transição */
+	.hero-dust {
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+		width: 100%;
+		height: 100%;
+		display: none;
+		pointer-events: none;
+	}
+
+	.is-dusting .hero-dust {
+		display: block;
+	}
+
+	.is-dusting .hero-media {
+		opacity: 0;
+	}
+
+	/* Sem WebGL2 ou com movimento reduzido: o vídeo apenas esmaece */
+	.dust-fallback .hero-media {
+		opacity: calc(1 - var(--dust, 0));
 	}
 
 	/* =========================================================
@@ -1216,9 +1246,10 @@ const fontFaces = `
 		pointer-events: none;
 	}
 
-	/* Folga final para o vídeo chegar ao último quadro antes de soltar o palco */
+	/* Folga final: o vídeo chega ao último quadro; os 100svh extras são o trecho em que a
+	   linha do tempo sobe por cima do palco fixo (ver .saga) e o vídeo se desfaz em areia na emenda */
 	.story-outro {
-		height: 40svh;
+		height: 140svh;
 	}
 
 	/* "Role para descobrir" some quando a rolagem começa (--intro 0→1) */
@@ -1255,6 +1286,8 @@ const fontFaces = `
 		z-index: 2;
 		pointer-events: none;
 		background: radial-gradient(48vw circle at var(--gx, 28%) 50%, rgba(204, 255, 0, 0.09), transparent 62%);
+		/* some junto com o vídeo na transição em areia */
+		opacity: calc(1 - var(--dust, 0));
 	}
 
 	/* Cada ato */
@@ -1381,10 +1414,22 @@ const fontFaces = `
 	   Fio de luz com ramificações que crescem e são podadas
 	   ========================================================= */
 	/* Altura = 1 tela + um trecho de rolagem por filme */
+	/* Sobe por cima do palco da primeira dobra (que segue fixo): a emenda entre as duas dobras
+	   é onde o vídeo vira areia */
 	.saga {
 		position: relative;
+		z-index: 2;
+		margin-top: -100svh;
 		height: calc(100svh + var(--n, 1) * 85svh);
-		background: var(--obsidian);
+		/* transparente: a faixa acima do cartão mostra o vídeo/areia, sem divisão (o fundo do body já é obsidian) */
+		background: transparent;
+	}
+
+	/* Enquanto sobe (--enter 0→1), a borda de cima do cartão se dissolve na areia: sem linha nem contorno */
+	.saga.is-entering .saga-card {
+		/* o esfumado encolhe até 0 quando o cartão fixa na tela: tirar a máscara não causa salto */
+		-webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 calc((1 - var(--enter, 1)) * 280px));
+		mask-image: linear-gradient(to bottom, transparent 0, #000 calc((1 - var(--enter, 1)) * 280px));
 	}
 
 	.saga-sticky {
@@ -3466,6 +3511,339 @@ const fontFaces = `
 			requestAnimationFrame(scrub);
 		};
 		requestAnimationFrame(scrub);
+
+		// 5 · Transição para a linha do tempo — Particle Scroll (port do Canvas UI para WebGL2 puro)
+		//     A linha do tempo sobe por cima do palco fixo; na emenda entre as duas dobras, o quadro do
+		//     rolo em projeção se desfaz em areia que sobe. Rolando de volta, ele se recompõe grão por grão.
+		//     A fonte é o próprio <video> (textura).
+		const dust = hero.querySelector<HTMLCanvasElement>('[data-dust]');
+		const card = hero.querySelector<HTMLElement>('.hero-card');
+		const media = hero.querySelector<HTMLElement>('.hero-media');
+		const sagaEl = document.querySelector<HTMLElement>('[data-saga]');
+		const DUST = {
+			density: 2, // espaçamento dos grãos (px CSS)
+			size: 1.25, // tamanho do grão disperso
+			spread: 220, // distância máxima da dispersão
+			gravity: -0.35, // negativo: a poeira sobe e se dissipa
+			drift: 0.7, // flutuação dos grãos soltos
+			swirl: 60, // arco lateral do voo
+			stagger: 0.7, // aleatoriedade por grão
+			fade: 0.85, // opacidade do grão disperso
+			smoothing: 0.3, // segundos para a emenda amortecida alcançar a real
+		};
+		// Emenda: borda superior da linha do tempo, em px do cartão do vídeo (> altura do cartão = fora de cena)
+		const seamTarget = () => {
+			if (!sagaEl || !card) return Infinity;
+			return sagaEl.getBoundingClientRect().top - card.getBoundingClientRect().top;
+		};
+		// 0 → 1 conforme a linha do tempo cobre a tela (esmaece cartão, brilho e o fallback)
+		const dustTarget = () => {
+			const vh = window.innerHeight;
+			return sagaEl ? clamp(1 - sagaEl.getBoundingClientRect().top / vh, 0, 1) : 0;
+		};
+		// Emenda sem divisão: --dust no palco; --enter (chega a 1 quando o cartão fixa no topo) na linha do tempo
+		const syncSeam = () => {
+			hero.style.setProperty('--dust', dustTarget().toFixed(4));
+			if (!sagaEl) return;
+			const vh = window.innerHeight;
+			const enter = clamp(1 - Math.max(0, sagaEl.getBoundingClientRect().top - 20) / Math.max(1, vh - 20), 0, 1);
+			sagaEl.style.setProperty('--enter', enter.toFixed(4));
+			sagaEl.classList.toggle('is-entering', enter > 0 && enter < 1);
+		};
+
+		const gl =
+			dust && card && media && sagaEl && !reduce
+				? dust.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false })
+				: null;
+
+		if (!gl) {
+			// Sem WebGL2 / movimento reduzido: o vídeo apenas esmaece
+			hero.classList.add('dust-fallback');
+			const fadeOut = syncSeam;
+			window.addEventListener('scroll', fadeOut, { passive: true });
+			fadeOut();
+		} else if (dust && card && media) {
+			const HASH = `float hash (vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }`;
+			// mesmo tratamento do .hero-video: brightness(.82) contrast(1.08) saturate(.9)
+			const GRADE = `vec3 grade (vec3 c) {
+				c *= 0.82;
+				c = (c - 0.5) * 1.08 + 0.5;
+				float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+				return clamp(mix(vec3(l), c, 0.9), 0.0, 1.0);
+			}`;
+			const QUAD_VERT = `#version 300 es
+				layout(location = 0) in vec2 aPos;
+				out vec2 vUv;
+				void main () { vUv = aPos * 0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }`;
+			// Parte ainda inteira: tudo acima da linha de formação
+			const BASE_FRAG = `#version 300 es
+				precision highp float;
+				in vec2 vUv;
+				out vec4 outColor;
+				uniform sampler2D uVideo;
+				uniform vec2 uRes;
+				uniform vec4 uMap;
+				uniform float uDensity;
+				uniform float uLine;
+				${GRADE}
+				void main () {
+					vec2 px = vec2(vUv.x, 1.0 - vUv.y) * uRes;
+					float rowY = (floor(px.y / uDensity) + 0.5) * uDensity;
+					float vis = step(rowY, uLine);
+					vec3 c = grade(texture(uVideo, px * uMap.xy + uMap.zw).rgb);
+					outColor = vec4(c * vis, vis);
+				}`;
+			// Grãos: só as linhas dentro da faixa de transição
+			const POINT_VERT = `#version 300 es
+				precision highp float;
+				uniform sampler2D uVideo;
+				uniform vec2 uRes;
+				uniform vec4 uMap;
+				uniform float uGridX;
+				uniform float uRowStart;
+				uniform float uDensity;
+				uniform float uLine;
+				uniform float uBand;
+				uniform float uStagger;
+				uniform float uSpread;
+				uniform float uGravity;
+				uniform float uDrift;
+				uniform float uSwirl;
+				uniform float uTime;
+				uniform float uFade;
+				uniform float uSize;
+				uniform float uDpr;
+				out vec3 vColor;
+				out float vAlpha;
+				out float vMerge;
+				${HASH}
+				${GRADE}
+				void main () {
+					float fid = float(gl_VertexID);
+					vec2 cell = vec2(mod(fid, uGridX), floor(fid / uGridX) + uRowStart);
+					vec2 home = (cell + 0.5) * uDensity;
+					float p = clamp(1.0 - (home.y - uLine) / uBand, 0.0, 1.0);
+					float h1 = hash(cell);
+					float h2 = hash(cell + vec2(1.7, 9.1));
+					float h3 = hash(cell + vec2(5.5, 2.9));
+					float h4 = hash(cell + vec2(8.4, 4.2));
+					float d = h1 * uStagger;
+					float t = clamp((p - d) / max(1.0 - d, 1e-3), 0.0, 1.0);
+					float e = 1.0 - pow(1.0 - t, 3.0);
+					if (t >= 0.9995 || p <= 0.0 || home.x > uRes.x) {
+						gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+						gl_PointSize = 0.0;
+						vColor = vec3(0.0); vAlpha = 0.0; vMerge = 0.0;
+						return;
+					}
+					vec2 dir = normalize(vec2(h2 - 0.5, h3 - 0.5) + vec2(1e-4, 0.0));
+					float reach = 0.08 + 0.92 * pow(h4, 2.4);
+					vec2 off = dir * uSpread * reach;
+					off.y += uGravity * uSpread * (0.25 + 0.75 * h4);
+					vec2 pos = mix(home + off, home, e);
+					vec2 perp = vec2(-dir.y, dir.x);
+					pos += perp * (h2 - 0.5) * 2.0 * uSwirl * sin(e * 3.14159);
+					float tt = uTime * uDrift;
+					float amp = (1.0 - e) * (uSpread * 0.05 + 2.5);
+					pos += vec2(sin(tt * (4.0 + 5.0 * h2) + h3 * 40.0), cos(tt * (3.5 + 5.5 * h3) + h2 * 40.0)) * amp;
+					pos += vec2(h4 - 0.5, h1 - 0.5) * uDensity * 3.0 * (1.0 - smoothstep(0.5, 0.85, t));
+					float sizeCss = mix(uSize, uDensity * 1.3, smoothstep(0.55, 1.0, e));
+					vColor = grade(textureLod(uVideo, home * uMap.xy + uMap.zw, 0.0).rgb);
+					// a linha que se desfez por completo some no ar
+					vAlpha = mix(uFade, 1.0, e) * smoothstep(0.0, 0.3, p);
+					vMerge = smoothstep(0.75, 0.97, t);
+					gl_Position = vec4(pos.x / uRes.x * 2.0 - 1.0, 1.0 - pos.y / uRes.y * 2.0, 0.0, 1.0);
+					gl_PointSize = max(sizeCss * uDpr, 1.0);
+				}`;
+			const POINT_FRAG = `#version 300 es
+				precision highp float;
+				in vec3 vColor;
+				in float vAlpha;
+				in float vMerge;
+				out vec4 outColor;
+				void main () {
+					vec2 o = gl_PointCoord - 0.5;
+					float circle = 1.0 - smoothstep(0.25, 0.5, length(o));
+					float a = vAlpha * mix(circle, 1.0, vMerge);
+					if (a < 0.01) discard;
+					outColor = vec4(vColor * a, a);
+				}`;
+
+			const compile = (type: number, text: string) => {
+				const s = gl.createShader(type)!;
+				gl.shaderSource(s, text);
+				gl.compileShader(s);
+				if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error('Areia: erro de shader', gl.getShaderInfoLog(s));
+				return s;
+			};
+			const link = (vs: string, fs: string) => {
+				const program = gl.createProgram()!;
+				gl.attachShader(program, compile(gl.VERTEX_SHADER, vs));
+				gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fs));
+				gl.linkProgram(program);
+				const u: Record<string, WebGLUniformLocation | null> = {};
+				const n = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+				for (let i = 0; i < n; i++) {
+					const info = gl.getActiveUniform(program, i)!;
+					u[info.name] = gl.getUniformLocation(program, info.name);
+				}
+				return { program, u };
+			};
+			const base = link(QUAD_VERT, BASE_FRAG);
+			const points = link(POINT_VERT, POINT_FRAG);
+
+			const quadVao = gl.createVertexArray();
+			gl.bindVertexArray(quadVao);
+			gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+			gl.enableVertexAttribArray(0);
+			gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+			const pointVao = gl.createVertexArray();
+
+			const tex = gl.createTexture();
+			gl.bindTexture(gl.TEXTURE_2D, tex);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
+
+			let dpr = 1;
+			const fit = () => {
+				dpr = Math.min(window.devicePixelRatio || 1, 2);
+				const w = Math.max(1, Math.round(card.clientWidth * dpr));
+				const h = Math.max(1, Math.round(card.clientHeight * dpr));
+				if (dust.width !== w || dust.height !== h) {
+					dust.width = w;
+					dust.height = h;
+				}
+			};
+			fit();
+
+			// Mapeia px do cartão → uv do vídeo (object-fit: cover; object-position: 50% 55%; inclui o parallax do .hero-media)
+			const mapFor = (v: HTMLVideoElement) => {
+				const cr = card.getBoundingClientRect();
+				const mr = media.getBoundingClientRect();
+				const vw = v.videoWidth || 16;
+				const vh = v.videoHeight || 9;
+				const s = Math.max(mr.width / vw, mr.height / vh);
+				const dw = vw * s;
+				const dh = vh * s;
+				const ox = mr.left - cr.left + (mr.width - dw) * 0.5;
+				const oy = mr.top - cr.top + (mr.height - dh) * 0.55;
+				return [1 / dw, 1 / dh, -ox / dw, -oy / dh] as const;
+			};
+
+			let ss = NaN; // emenda amortecida (px do cartão)
+			let time = 0;
+			let last = 0;
+			let running = false;
+			let dusting = false;
+
+			// Faixa de areia logo acima da emenda; ela "abre" conforme a linha do tempo entra
+			const lineFor = (seam: number, h: number) => {
+				const band = Math.max(140, h * 0.22);
+				const entered = clamp((h - seam) / band, 0, 1);
+				return { band, line: seam - band * entered };
+			};
+
+			const draw = (seam: number) => {
+				const w = Math.max(card.clientWidth, 1);
+				const h = Math.max(card.clientHeight, 1);
+				const density = Math.max(DUST.density, Math.sqrt((w * h) / 800000));
+				const { band, line } = lineFor(seam, h);
+				const v = videos[onAir];
+				if (v.readyState >= 2) {
+					gl.bindTexture(gl.TEXTURE_2D, tex);
+					gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, v);
+				}
+				const map = mapFor(v);
+
+				gl.viewport(0, 0, dust.width, dust.height);
+				gl.clearColor(0, 0, 0, 0);
+				gl.clear(gl.COLOR_BUFFER_BIT);
+				gl.activeTexture(gl.TEXTURE0);
+				gl.bindTexture(gl.TEXTURE_2D, tex);
+
+				gl.disable(gl.BLEND);
+				gl.useProgram(base.program);
+				gl.bindVertexArray(quadVao);
+				gl.uniform1i(base.u.uVideo, 0);
+				gl.uniform2f(base.u.uRes, w, h);
+				gl.uniform4f(base.u.uMap, ...map);
+				gl.uniform1f(base.u.uDensity, density);
+				gl.uniform1f(base.u.uLine, line);
+				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+				const gridX = Math.ceil(w / density);
+				const rowStart = Math.max(0, Math.floor(line / density));
+				// abaixo da emenda a linha do tempo já cobre o palco: nada a desenhar ali
+				const rowEnd = Math.min(Math.ceil(h / density), Math.ceil(Math.min(line + band, seam) / density) + 1);
+				if (rowEnd <= rowStart) return;
+				gl.enable(gl.BLEND);
+				gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+				gl.useProgram(points.program);
+				gl.bindVertexArray(pointVao);
+				const u = points.u;
+				gl.uniform1i(u.uVideo, 0);
+				gl.uniform2f(u.uRes, w, h);
+				gl.uniform4f(u.uMap, ...map);
+				gl.uniform1f(u.uGridX, gridX);
+				gl.uniform1f(u.uRowStart, rowStart);
+				gl.uniform1f(u.uDensity, density);
+				gl.uniform1f(u.uLine, line);
+				gl.uniform1f(u.uBand, band);
+				gl.uniform1f(u.uStagger, DUST.stagger);
+				gl.uniform1f(u.uSpread, DUST.spread);
+				gl.uniform1f(u.uGravity, DUST.gravity);
+				gl.uniform1f(u.uDrift, DUST.drift);
+				gl.uniform1f(u.uSwirl, DUST.swirl);
+				gl.uniform1f(u.uTime, time);
+				gl.uniform1f(u.uFade, DUST.fade);
+				gl.uniform1f(u.uSize, DUST.size);
+				gl.uniform1f(u.uDpr, dpr);
+				gl.drawArrays(gl.POINTS, 0, gridX * (rowEnd - rowStart));
+			};
+
+			const frame = (now: number) => {
+				const dt = Math.min((now - last) / 1000, 1 / 30);
+				last = now;
+				time += dt;
+				syncSeam();
+				const h = Math.max(card.clientHeight, 1);
+				const target = seamTarget();
+				if (!Number.isFinite(ss) || Math.abs(target - ss) > h * 3) ss = target;
+				ss += (target - ss) * (1 - Math.exp(-dt / DUST.smoothing));
+				if (Math.abs(target - ss) < 0.5) ss = target;
+
+				const { line } = lineFor(ss, h);
+				const active = line < h && ss > 0;
+				if (active) draw(ss);
+				// a troca vídeo ↔ canvas acontece no mesmo quadro em que o canvas já foi desenhado
+				if (active !== dusting) {
+					dusting = active;
+					hero.classList.toggle('is-dusting', active);
+				}
+				// fora da transição (vídeo inteiro, ou palco já coberto pela linha do tempo): dorme até a próxima rolagem
+				if (ss === target && !active) {
+					running = false;
+					return;
+				}
+				requestAnimationFrame(frame);
+			};
+			const start = () => {
+				if (running) return;
+				running = true;
+				last = performance.now();
+				requestAnimationFrame(frame);
+			};
+			window.addEventListener('scroll', start, { passive: true });
+			window.addEventListener('resize', () => {
+				fit();
+				start();
+			});
+			start();
+		}
 	}
 
 	// 6 · Segunda dobra — Linha do Tempo Sagrada (câmera guiada pela rolagem ao longo do fio)
