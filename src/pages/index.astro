@@ -521,6 +521,11 @@ const fontFaces = `
 						<svg class="sg-svg sg-pulse" viewBox={`0 0 ${worldW} 1000`} aria-hidden="true">
 							<path d={strand} pathLength="1" />
 						</svg>
+						<!-- Reprodução automática no próprio fio: a carga corre do nó ativo até o próximo em 10s -->
+						<svg class="sg-svg sg-charge" viewBox={`0 0 ${worldW} 1000`} aria-hidden="true" data-sg-charge>
+							<path class="sg-charge-trail" d={strand} />
+							<circle class="sg-charge-head" r="9" cx="-100" cy="-100" />
+						</svg>
 
 						{filmNodes.map((f, i) => (
 							<div
@@ -539,14 +544,10 @@ const fontFaces = `
 									<span class="sg-poster tilt-card" data-tilt-poster>
 										<img src={f.img.m} srcset={`${f.img.s} 300w, ${f.img.m} 600w, ${f.img.l} 1200w`} sizes="(max-width: 900px) 30vw, 220px" alt={`Pôster de ${f.title} (${f.year})`} loading="lazy" decoding="async" draggable="false" />
 									</span>
-									<span class="sg-meta" aria-hidden="true">
-										<span class="sg-meta-cap">Capítulo {f.n}</span>
-										<span class="sg-meta-title">{f.title}</span>
-										<span class="sg-meta-year">{f.year}</span>
-									</span>
 								</button>
 								<span class="sg-node" aria-hidden="true">
 									<span class="radar-ring"></span>
+									<span class="sg-node-timer"></span>
 									<span class="sg-node-n">{f.n}</span>
 								</span>
 							</div>
@@ -556,13 +557,8 @@ const fontFaces = `
 
 				<!-- Texto do filme ativo -->
 				<div class="saga-copy" data-saga-copy aria-live="polite">
-					<p class="saga-eyebrow s-rv" style="--d:0.1s">
-						<span class="pulse-dot"></span>Linha do tempo <span class="saga-eyebrow-sep"></span> <span data-saga-chapter>Capítulo {films[0].n}</span>
-					</p>
 					<h3 class="saga-title" data-saga-title aria-label={`${films[0].title} (${films[0].year})`}></h3>
 					<p class="saga-synopsis s-rv" style="--d:0.5s" data-saga-synopsis>{films[0].synopsis}</p>
-					<!-- Reprodução automática: enche em 10s até o próximo filme -->
-					<div class="saga-auto" aria-hidden="true" data-saga-auto><span class="saga-auto-fill"></span></div>
 				</div>
 
 				<!-- HUD: ano corrente no fio + variantes podadas -->
@@ -641,21 +637,10 @@ const fontFaces = `
 
 		<!-- ================= QUARTA DOBRA · MARQUEE DE VÍDEO (sem overlay) ================= -->
 		<section class="final" aria-labelledby="release-heading" data-final>
-			<!-- Fonte única: um só vídeo é decodificado; cada cópia da faixa recebe o quadro atual (canvas) -->
-			<!-- Só começa a baixar quando a dobra se aproxima (script, seção 8) -->
-			<video class="final-source" data-src={finalVideo} muted loop playsinline preload="none" aria-hidden="true" data-final-video></video>
-
-			<!-- Marquee (design system · .marquee-container): faixa de vídeos deslizando -->
-			<div class="final-marquee" aria-hidden="true" data-final-marquee>
-				<div class="final-marquee-track">
-					{[0, 1].map(() => (
-						<div class="final-marquee-group">
-							{[0, 1, 2].map(() => (
-								<canvas class="final-tile" width="960" height="402" data-final-tile></canvas>
-							))}
-						</div>
-					))}
-				</div>
+			<!-- Vídeo de fundo (Final.webm): mudo, em loop; só baixa quando a dobra se aproxima (script, seção 8) -->
+			<div class="final-bg" aria-hidden="true">
+				<video class="final-bg-video" data-src={finalVideo} muted loop playsinline preload="none" data-final-video></video>
+				<div class="final-bg-shade"></div>
 			</div>
 
 			<!-- Estreia: contagem regressiva + botão para salvar a data no calendário -->
@@ -695,19 +680,6 @@ const fontFaces = `
 				<button class="release-ics" type="button" data-save-date>
 					<span data-save-label>Usa outro calendário? Baixar arquivo .ics</span>
 				</button>
-			</div>
-
-			<!-- Mesmo marquee de vídeo, repetido abaixo do botão -->
-			<div class="final-marquee" aria-hidden="true" data-final-marquee>
-				<div class="final-marquee-track">
-					{[0, 1].map(() => (
-						<div class="final-marquee-group">
-							{[0, 1, 2].map(() => (
-								<canvas class="final-tile" width="960" height="402" data-final-tile></canvas>
-							))}
-						</div>
-					))}
-				</div>
 			</div>
 		</section>
 	</main>
@@ -1644,6 +1616,52 @@ const fontFaces = `
 		to { stroke-dashoffset: -0.1; }
 	}
 
+	/* Reprodução automática no fio (10s por filme): a carga acende o trecho entre o nó ativo e o
+	   próximo, com uma faísca na ponta. JS controla o dasharray e a posição da faísca. */
+	.sg-charge {
+		z-index: 1;
+		opacity: 0;
+		transition: opacity 0.5s var(--ease-out);
+		filter: drop-shadow(0 0 6px rgba(204, 255, 0, 0.95)) drop-shadow(0 0 22px rgba(204, 255, 0, 0.5));
+	}
+
+	.saga.is-auto .sg-charge {
+		opacity: 1;
+	}
+
+	.sg-charge-trail {
+		stroke: var(--acid);
+		stroke-width: 7;
+		stroke-dasharray: 0 1e6;
+	}
+
+	.sg-charge-head {
+		fill: #fffef2;
+		animation: sgChargeHead 0.9s ease-in-out infinite alternate;
+	}
+
+	@keyframes sgChargeHead {
+		from { opacity: 0.75; }
+		to { opacity: 1; }
+	}
+
+	/* Anel-relógio ao redor do nó ativo: fecha junto com a carga */
+	.sg-node-timer {
+		position: absolute;
+		inset: -8px;
+		border-radius: 999px;
+		background: conic-gradient(var(--acid) calc(var(--auto, 0) * 360deg), rgba(255, 255, 255, 0.12) 0);
+		-webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+		mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+		opacity: 0;
+		transition: opacity 0.4s var(--ease-out);
+		pointer-events: none;
+	}
+
+	.saga.is-auto .sg-film.is-active .sg-node-timer {
+		opacity: 1;
+	}
+
 	/* Ramificações: crescem ao se aproximar (JS controla o dashoffset) */
 	.sg-branches {
 		filter: drop-shadow(0 0 3px rgba(255, 51, 0, 0.55));
@@ -1988,8 +2006,8 @@ const fontFaces = `
 		display: block;
 		overflow: hidden;
 		/* acentos em cima, cedilha (Ç) embaixo */
-		padding: 0.16em 0.03em 0.27em;
-		margin: -0.16em 0 -0.24em;
+		padding: 0.26em 0.03em 0.27em;
+		margin: -0.26em 0 -0.24em;
 	}
 
 	.saga-title .t-word {
@@ -1999,6 +2017,9 @@ const fontFaces = `
 
 	.saga-title .t-ch {
 		display: inline-block;
+		/* a caixa sobe acima da entrelinha 0.86: o degradê (background-clip: text) alcança os acentos (Á, É, Ã) */
+		padding-top: 0.24em;
+		margin-top: -0.24em;
 		padding-bottom: 0.26em;
 		margin-bottom: -0.26em;
 		transform: translateY(110%);
@@ -2022,39 +2043,6 @@ const fontFaces = `
 		max-width: 50ch;
 		font: 400 clamp(0.95rem, 1.04vw, 1.06rem) / 1.65 var(--ff-body);
 		color: rgba(255, 255, 255, 0.74);
-	}
-
-	/* Barra da reprodução automática (10s por filme) — some quando o usuário assume a rolagem */
-	.saga-auto {
-		position: relative;
-		height: 2px;
-		margin-top: clamp(18px, 2vw, 26px);
-		border-radius: 2px;
-		background: rgba(255, 255, 255, 0.12);
-		overflow: hidden;
-		opacity: 0;
-		transition: opacity 0.5s var(--ease-out);
-	}
-
-	.saga.is-auto .saga-auto {
-		opacity: 1;
-	}
-
-	.saga-auto-fill {
-		position: absolute;
-		inset: 0;
-		background: var(--acid);
-		box-shadow: 0 0 8px rgba(204, 255, 0, 0.8);
-		transform-origin: left;
-		transform: scaleX(0);
-	}
-
-	.saga-auto.is-run .saga-auto-fill {
-		animation: sagaAuto 10s linear forwards;
-	}
-
-	@keyframes sagaAuto {
-		to { transform: scaleX(1); }
 	}
 
 	.saga-synopsis[hidden] {
@@ -2179,6 +2167,9 @@ const fontFaces = `
 	   ========================================================= */
 	.doom {
 		position: relative;
+		/* Sobe 2× o quadro: o cartão do trailer encosta no da linha do tempo, sem faixa entre as dobras */
+		z-index: 3;
+		margin-top: calc(var(--frame) * -2);
 		height: 320svh;
 		background: var(--obsidian);
 	}
@@ -2199,6 +2190,24 @@ const fontFaces = `
 		isolation: isolate;
 		background: radial-gradient(70% 70% at 50% 50%, #101009 0%, #060607 75%);
 		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 40px 120px -40px rgba(204, 255, 0, 0.12);
+	}
+
+	/* Emenda sem dobra: enquanto o trailer sobe (--enter 0→1), o topo do cartão do trailer e a base
+	   do cartão da linha do tempo se dissolvem no fundo (somem cantos e contorno). Em 1 a máscara é 0: sem salto */
+	.doom.is-entering .doom-card {
+		-webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 calc((1 - var(--enter, 1)) * 280px));
+		mask-image: linear-gradient(to bottom, transparent 0, #000 calc((1 - var(--enter, 1)) * 280px));
+	}
+
+	/* Saída para a quarta dobra: a base do cartão (cantos, contorno e brilho) se dissolve no fundo */
+	.doom.is-leaving .doom-card {
+		-webkit-mask-image: linear-gradient(to top, transparent 0, #000 calc(var(--leave, 0) * 280px));
+		mask-image: linear-gradient(to top, transparent 0, #000 calc(var(--leave, 0) * 280px));
+	}
+
+	.saga.is-leaving .saga-card {
+		-webkit-mask-image: linear-gradient(to top, transparent 0, #000 calc(var(--leave, 0) * 280px));
+		mask-image: linear-gradient(to top, transparent 0, #000 calc(var(--leave, 0) * 280px));
 	}
 
 	/* Tremor do quadro no instante em que a fenda rasga */
@@ -2621,8 +2630,42 @@ const fontFaces = `
 	   ========================================================= */
 	.final {
 		position: relative;
+		isolation: isolate;
+		overflow: hidden;
+		display: grid;
+		align-content: center;
+		min-height: 100svh;
 		padding: clamp(18px, 3vw, 40px) 0;
 		background: var(--obsidian);
+	}
+
+	/* Vídeo de fundo: cobre a dobra inteira, atrás do conteúdo */
+	.final-bg {
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		pointer-events: none;
+	}
+
+	.final-bg-video {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		opacity: 0;
+		transition: opacity 1.2s var(--ease-out);
+	}
+
+	.final-bg-video.is-ready {
+		opacity: 1;
+	}
+
+	/* Sombra para leitura da contagem + bordas em obsidian: emenda sem linha com o trailer e o rodapé */
+	.final-bg-shade {
+		position: absolute;
+		inset: 0;
+		background:
+			linear-gradient(to bottom, var(--obsidian) 0%, transparent 22%, transparent 78%, var(--obsidian) 100%),
+			radial-gradient(60% 55% at 50% 50%, rgba(6, 6, 7, 0.7) 0%, rgba(6, 6, 7, 0.35) 100%);
 	}
 
 	/* Vídeo-fonte: fica fora da vista, só alimenta as cópias da faixa */
@@ -3902,7 +3945,22 @@ const fontFaces = `
 			titleEl.replaceChildren(line(title, 'fill'));
 			titleEl.classList.toggle('is-long', title.length > 18);
 			titleEl.setAttribute('aria-label', `${title} (${year})`);
+			fitTitle();
 		};
+
+		// Palavra única longa (ex.: Thunderbolts*) não quebra linha: se a mais larga não couber na coluna,
+		// a fonte encolhe na medida exata em vez de cortar o texto
+		const fitTitle = () => {
+			if (!titleEl) return;
+			titleEl.style.fontSize = '';
+			const avail = titleEl.clientWidth;
+			const widest = Math.max(0, ...[...titleEl.querySelectorAll<HTMLElement>('.t-word')].map((w) => w.offsetWidth));
+			if (!avail || widest <= avail) return;
+			const size = parseFloat(getComputedStyle(titleEl).fontSize);
+			titleEl.style.fontSize = `${Math.floor(size * (avail / widest) * 0.97)}px`;
+		};
+		window.addEventListener('resize', fitTitle);
+		document.fonts?.ready.then(fitTitle);
 
 		const go = (i: number) => {
 			if (i === index) return;
@@ -4023,23 +4081,69 @@ const fontFaces = `
 		// Qualquer rolagem/navegação do usuário desativa; volta a valer quando ele sai e retorna à seção.
 		const AUTO_MS = 10000;
 		const GRACE_MS = 1200; // ignora o embalo da rolagem de quem acabou de chegar
-		const autoBar = saga.querySelector<HTMLElement>('[data-saga-auto]');
 		let autoState: 'idle' | 'on' | 'off' = 'idle';
 		let autoTimer = 0;
 		let autoSince = 0;
 		let autoIndex = 0;
 
+		// Carga no fio: comprimento do fio em cada nó (busca binária pelo x), calculado uma vez
+		const chargeSvg = saga.querySelector<SVGSVGElement>('[data-sg-charge]');
+		const chargeTrail = chargeSvg?.querySelector<SVGPathElement>('.sg-charge-trail') ?? null;
+		const chargeHead = chargeSvg?.querySelector<SVGCircleElement>('.sg-charge-head') ?? null;
+		let nodeLens: number[] | null = null;
+		let trailLen = 0;
+		const lensOf = () => {
+			if (nodeLens || !chargeTrail) return nodeLens;
+			trailLen = chargeTrail.getTotalLength();
+			nodeLens = nodeX.map((x) => {
+				let lo = 0;
+				let hi = trailLen;
+				for (let k = 0; k < 24; k++) {
+					const mid = (lo + hi) / 2;
+					if (chargeTrail.getPointAtLength(mid).x < x) lo = mid;
+					else hi = mid;
+				}
+				return (lo + hi) / 2;
+			});
+			return nodeLens;
+		};
+		let chargeRaf = 0;
+		let chargeStart = 0;
+		let chargeFrom = 0;
+		const paintCharge = (t: number) => {
+			films[chargeFrom]?.style.setProperty('--auto', t.toFixed(4));
+			const lens = lensOf();
+			if (!lens || !chargeTrail || !chargeHead) return;
+			const a = lens[chargeFrom];
+			const b = lens[Math.min(total - 1, chargeFrom + 1)];
+			const L = a + (b - a) * t;
+			chargeTrail.style.strokeDasharray = `0 ${a.toFixed(1)} ${(L - a).toFixed(1)} ${trailLen.toFixed(1)}`;
+			const pt = chargeTrail.getPointAtLength(L);
+			chargeHead.setAttribute('cx', pt.x.toFixed(1));
+			chargeHead.setAttribute('cy', pt.y.toFixed(1));
+		};
+		const chargeLoop = () => {
+			const t = clamp01((performance.now() - chargeStart) / AUTO_MS);
+			paintCharge(t);
+			chargeRaf = autoState === 'on' && t < 1 ? requestAnimationFrame(chargeLoop) : 0;
+		};
+		const clearCharge = () => {
+			cancelAnimationFrame(chargeRaf);
+			chargeRaf = 0;
+			films.forEach((f) => f.style.removeProperty('--auto'));
+		};
 		const restartBar = () => {
-			if (!autoBar) return;
-			autoBar.classList.remove('is-run');
-			void autoBar.offsetWidth; // reinicia a animação da barra
-			autoBar.classList.add('is-run');
+			clearCharge();
+			chargeFrom = autoIndex;
+			chargeStart = performance.now();
+			paintCharge(0);
+			chargeRaf = requestAnimationFrame(chargeLoop);
 		};
 		const stopAuto = (next: 'idle' | 'off') => {
 			window.clearTimeout(autoTimer);
 			autoState = next;
 			saga.classList.remove('is-auto');
-			autoBar?.classList.remove('is-run');
+			clearCharge();
 		};
 		const armStep = () => {
 			window.clearTimeout(autoTimer);
@@ -4177,6 +4281,7 @@ const fontFaces = `
 		const playBtn = doom.querySelector<HTMLButtonElement>('[data-doom-play]');
 		const status = doom.querySelector<HTMLElement>('[data-doom-status]');
 		const rayLines = [...doom.querySelectorAll<SVGPathElement>('[data-doom-ray]')];
+		const sagaSeam = document.querySelector<HTMLElement>('[data-saga]');
 		const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 		const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 		let playing = false;
@@ -4194,6 +4299,20 @@ const fontFaces = `
 		const frame = () => {
 			const r = doom.getBoundingClientRect();
 			const p = reduce ? 1 : clamp01(-r.top / (r.height - window.innerHeight));
+
+			// Emenda sem dobra com a linha do tempo: chega a 1 quando o cartão do trailer fixa no topo
+			const enter = clamp01(1 - Math.max(0, r.top) / Math.max(1, window.innerHeight));
+			const seam = enter > 0 && enter < 1;
+			doom.style.setProperty('--enter', enter.toFixed(4));
+			doom.classList.toggle('is-entering', seam);
+			if (sagaSeam) {
+				sagaSeam.style.setProperty('--leave', enter.toFixed(4));
+				sagaSeam.classList.toggle('is-leaving', seam);
+			}
+			// Saída sem borda para a quarta dobra: 0 enquanto o cartão está fixo, cresce conforme ele sai
+			const leave = clamp01(1 - r.bottom / Math.max(1, window.innerHeight));
+			doom.style.setProperty('--leave', leave.toFixed(4));
+			doom.classList.toggle('is-leaving', leave > 0 && leave < 1);
 			const draw = ease(clamp01(p / 0.3));
 			const c = ease(clamp01((p - 0.22) / 0.28));
 			const o = playing || reduce ? 1 : clamp01((p - 0.48) / 0.32);
@@ -4274,69 +4393,43 @@ const fontFaces = `
 		frame();
 	}
 
-	// 8 · Quarta dobra — marquee do vídeo: um só vídeo toca (mudo, em loop) e cada cópia recebe o quadro atual
+	// 8 · Quarta dobra — vídeo de fundo: carrega perto da dobra, toca (mudo, em loop) só enquanto ela está na tela
 	const finalVideoEl = document.querySelector<HTMLVideoElement>('[data-final-video]');
-	const finalTiles = [...document.querySelectorAll<HTMLCanvasElement>('[data-final-tile]')]
-		.map((c) => c.getContext('2d'))
-		.filter((ctx): ctx is CanvasRenderingContext2D => !!ctx);
-	if (finalVideoEl && finalTiles.length) {
-		const paint = () => {
-			if (finalVideoEl.readyState < 2) return;
-			finalTiles.forEach((ctx) => ctx.drawImage(finalVideoEl, 0, 0, ctx.canvas.width, ctx.canvas.height));
-		};
+	const finalSection = document.querySelector<HTMLElement>('[data-final]');
+	if (finalVideoEl && finalSection) {
 		let visible = false;
-		let raf = 0;
-		const loop = () => {
-			paint();
-			raf = visible ? requestAnimationFrame(loop) : 0;
-		};
-		finalVideoEl.addEventListener('loadeddata', () => {
-			paint();
-			if (visible && !reduce) finalVideoEl.play().catch(() => {});
-		});
-		finalVideoEl.addEventListener('seeked', paint);
-
-		// Carregamento sob demanda: o vídeo só é buscado quando a dobra está a ~1,5 tela de distância
-		const finalSection = document.querySelector<HTMLElement>('[data-final]');
 		const loadFinal = () => {
 			if (finalVideoEl.getAttribute('src') || !finalVideoEl.dataset.src) return;
 			finalVideoEl.preload = 'auto';
 			finalVideoEl.src = finalVideoEl.dataset.src;
 		};
-		if (finalSection) {
-			const near = new IntersectionObserver(
-				(entries) => {
-					if (!entries.some((e) => e.isIntersecting)) return;
-					loadFinal();
-					near.disconnect();
-				},
-				{ rootMargin: '150% 0px 150% 0px' },
-			);
-			near.observe(finalSection);
-		} else loadFinal();
+		finalVideoEl.addEventListener('loadeddata', () => {
+			finalVideoEl.classList.add('is-ready');
+			if (visible && !reduce) finalVideoEl.play().catch(() => {});
+		});
 
-		// Toca enquanto qualquer uma das faixas estiver na tela
-		const marquees = [...document.querySelectorAll<HTMLElement>('[data-final-marquee]')];
-		const onScreen = new Set<Element>();
-		const observer = new IntersectionObserver(
+		// Busca o vídeo quando a dobra está a ~1,5 tela de distância
+		const near = new IntersectionObserver(
 			(entries) => {
-				entries.forEach((entry) => (entry.isIntersecting ? onScreen.add(entry.target) : onScreen.delete(entry.target)));
-				visible = onScreen.size > 0;
-				if (reduce) {
-					paint();
-					return;
-				}
+				if (!entries.some((e) => e.isIntersecting)) return;
+				loadFinal();
+				near.disconnect();
+			},
+			{ rootMargin: '150% 0px 150% 0px' },
+		);
+		near.observe(finalSection);
+
+		// Toca na tela, pausa fora dela (com movimento reduzido fica parado no primeiro quadro)
+		new IntersectionObserver(
+			([entry]) => {
+				visible = entry.isIntersecting;
 				if (visible) {
 					loadFinal();
-					finalVideoEl.play().catch(() => {});
-					if (!raf) raf = requestAnimationFrame(loop);
-				} else {
-					finalVideoEl.pause();
-				}
+					if (!reduce) finalVideoEl.play().catch(() => {});
+				} else finalVideoEl.pause();
 			},
 			{ threshold: 0.05 },
-		);
-		marquees.forEach((m) => observer.observe(m));
+		).observe(finalSection);
 	}
 
 	// 9 · Estreia — contagem regressiva até 16/12/2026 + salvar a data no calendário (.ics)
