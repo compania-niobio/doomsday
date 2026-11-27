@@ -424,9 +424,11 @@ const fontFaces = `
 				<div class="prologue-frame">
 					<h1 id="story-title" class="prologue-title" aria-label="Vingadores: Doomsday — O universo não está morrendo. Está sendo reescrito.">
 						<span class="pt-main reveal" style="--d:1.1s" aria-hidden="true">
-							<span class="pt-line pt-out">O universo</span>
-							<span class="pt-line pt-out">não está morrendo.</span>
-							<span class="pt-line pt-acid">Está sendo reescrito.</span>
+							<!-- Fenda: o quadro do vídeo preenche as letras vazadas só onde a fenda passa (canvas, script 1b) -->
+							<canvas class="pt-rift" data-rift></canvas>
+							<span class="pt-line pt-out" data-rift-line>O universo</span>
+							<span class="pt-line pt-out" data-rift-line>não está morrendo.</span>
+							<span class="pt-line pt-acid" data-rewrite>Está sendo reescrito.</span>
 						</span>
 					</h1>
 				</div>
@@ -558,7 +560,7 @@ const fontFaces = `
 				<!-- Texto do filme ativo -->
 				<div class="saga-copy" data-saga-copy aria-live="polite">
 					<h3 class="saga-title" data-saga-title aria-label={`${films[0].title} (${films[0].year})`}></h3>
-					<p class="saga-synopsis s-rv" style="--d:0.5s" data-saga-synopsis>{films[0].synopsis}</p>
+					<p class="saga-synopsis" data-saga-synopsis>{films[0].synopsis}</p>
 				</div>
 
 				<!-- HUD: ano corrente no fio + variantes podadas -->
@@ -958,6 +960,7 @@ const fontFaces = `
 	}
 
 	.pt-main {
+		position: relative;
 		display: block;
 		font: 900 clamp(2.2rem, 7.6vw, 8.5rem) / 0.9 var(--ff-display);
 		letter-spacing: -0.01em;
@@ -982,8 +985,38 @@ const fontFaces = `
 		-webkit-text-fill-color: transparent;
 	}
 
-	.is-ready .pt-acid {
-		animation: glitch 6s steps(1) 3.5s infinite;
+	/* Fenda (design system: hero-word-reveal + image-text): o canvas recebe o quadro do vídeo recortado
+	   no desenho das letras; a máscara são duas bolhas radiais (a segunda atrasada) que seguem o cursor */
+	.pt-rift {
+		position: absolute;
+		z-index: 1;
+		inset: -0.12em -0.3em;
+		width: calc(100% + 0.6em);
+		height: calc(100% + 0.24em);
+		pointer-events: none;
+		filter: drop-shadow(0 0 14px rgba(204, 255, 0, 0.45)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.6));
+		-webkit-mask-image:
+			radial-gradient(circle var(--rr, 0px) at var(--ax, -999px) var(--ay, -999px), #000 0 52%, transparent 78%),
+			radial-gradient(circle calc(var(--rr, 0px) * 0.72) at var(--bx, -999px) var(--by, -999px), #000 0 44%, transparent 76%);
+		mask-image:
+			radial-gradient(circle var(--rr, 0px) at var(--ax, -999px) var(--ay, -999px), #000 0 52%, transparent 78%),
+			radial-gradient(circle calc(var(--rr, 0px) * 0.72) at var(--bx, -999px) var(--by, -999px), #000 0 44%, transparent 76%);
+	}
+
+	/* Reescrita: enquanto as letras embaralham, a linha se divide em ember/branco (aberração cromática) */
+	.pt-acid {
+		transition: filter 0.3s;
+	}
+
+	.pt-acid.is-rewriting {
+		filter: drop-shadow(3px 0 0 rgba(255, 51, 0, 0.85)) drop-shadow(-3px 0 0 rgba(255, 255, 255, 0.55));
+		animation: ptJolt 0.18s steps(2) infinite;
+	}
+
+	@keyframes ptJolt {
+		0% { transform: translate(-2px, 0) skewX(-4deg); }
+		50% { transform: translate(2px, -1px) skewX(3deg); }
+		100% { transform: none; }
 	}
 
 	.hero-shade {
@@ -1888,6 +1921,13 @@ const fontFaces = `
 		opacity: 1;
 	}
 
+	/* Telas baixas (notebook pequeno, celular grande deitado): o cartão acompanha a altura da tela */
+	@media (max-height: 660px) {
+		.saga-card {
+			min-height: 0;
+		}
+	}
+
 	/* Em telas estreitas o rótulo seria cortado na borda; o título já aparece no texto à esquerda */
 	@media (max-width: 1200px) {
 		.sg-meta {
@@ -2022,8 +2062,6 @@ const fontFaces = `
 		margin-top: -0.24em;
 		padding-bottom: 0.26em;
 		margin-bottom: -0.26em;
-		transform: translateY(110%);
-		opacity: 0;
 	}
 
 	/* Nome do filme: branco que se dissolve */
@@ -2034,8 +2072,11 @@ const fontFaces = `
 		-webkit-text-fill-color: transparent;
 	}
 
-	.saga.is-in .saga-title .t-ch {
-		animation: textSlide 0.9s var(--ease-out) calc(0.15s + var(--i) * 32ms) forwards;
+	/* Surgimento do texto: névoa "mist" do design system (máscara de ruído fractal), soprada pelo fio.
+	   O JS aplica o filtro SVG; até a seção entrar na tela o texto fica oculto. */
+	.saga-title[data-mist='hidden'],
+	.saga-synopsis[data-mist='hidden'] {
+		visibility: hidden;
 	}
 
 	.saga-synopsis {
@@ -2049,18 +2090,11 @@ const fontFaces = `
 		display: none;
 	}
 
-	/* Troca de filme: texto sai com desfoque antes do novo entrar */
-	.saga-copy.is-swapping .saga-title {
-		opacity: 0;
-		filter: blur(6px);
-	}
-
-	.saga-copy .saga-synopsis,
+	/* Troca de filme: a névoa recolhe o texto para o fio antes do novo condensar (JS) */
 	.saga-copy [data-saga-chapter] {
 		transition: opacity 0.4s ease, filter 0.4s ease;
 	}
 
-	.saga-copy.is-swapping .saga-synopsis,
 	.saga-copy.is-swapping [data-saga-chapter] {
 		opacity: 0;
 		filter: blur(8px);
@@ -2106,10 +2140,15 @@ const fontFaces = `
 		.saga-card {
 			display: flex;
 			flex-direction: column;
-			gap: 20px;
-			padding: 72px var(--gutter) 28px;
+			gap: clamp(12px, 2.4svh, 20px);
+			/* o cartão nunca passa da tela (o piso de 640px cortava o texto em celulares baixos) */
+			min-height: 0;
+			/* topo só tinha o arco decorativo: o espaço vai para o palco (pôster maior) */
+			padding: clamp(20px, 4svh, 40px) var(--gutter) clamp(16px, 3svh, 28px);
 		}
 
+		/* O texto ocupa o que sobra, com tamanho fixo: o palco não muda de altura a cada filme
+		   (antes ele encolhia/crescia com a sinopse e o pôster, o nó e o ano "pulavam") */
 		.saga-copy {
 			position: relative;
 			left: auto;
@@ -2118,20 +2157,36 @@ const fontFaces = `
 			bottom: auto;
 			width: auto;
 			translate: none;
+			flex: 1 1 0;
+			min-height: 0;
+			overflow: hidden;
 		}
 
 		.sg-stage {
 			position: relative;
 			inset: auto;
-			flex: 1 1 0;
-			min-height: 0;
+			flex: none;
+			height: clamp(260px, 54svh, 620px);
 			margin-inline: calc(var(--gutter) * -1);
 			-webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 14%, #000 86%, transparent 100%);
 			mask-image: linear-gradient(90deg, transparent 0%, #000 14%, #000 86%, transparent 100%);
 		}
 
+		/* Pôster: maior, mas sempre dentro da metade do palco (alterna acima/abaixo do fio) */
 		.sg-card {
-			width: 27cqh;
+			width: min(28cqh, 42cqw);
+		}
+
+		.sg-film--up .sg-card {
+			bottom: 7.4cqh;
+		}
+
+		.sg-film--down .sg-card {
+			top: 7.4cqh;
+		}
+
+		.sg-leader {
+			height: 4.8cqh;
 		}
 
 		.sg-meta,
@@ -2139,12 +2194,22 @@ const fontFaces = `
 			display: none;
 		}
 
+		/* Ano-fantasma: o nó ativo cresce (escala 1.18 + sombra ≈ 33px de raio), então o afastamento
+		   tem piso maior que isso: o ano não encosta no nó */
 		.sg-year {
-			font-size: 17cqh;
+			font-size: 15cqh;
+		}
+
+		.sg-film--up .sg-year {
+			top: max(7cqh, 44px);
+		}
+
+		.sg-film--down .sg-year {
+			bottom: max(7cqh, 44px);
 		}
 
 		.saga-title {
-			font-size: clamp(2.4rem, 12vw, 3.6rem);
+			font-size: clamp(2rem, 9vw, 3.6rem);
 		}
 
 		.saga-synopsis {
@@ -2152,8 +2217,71 @@ const fontFaces = `
 			-webkit-line-clamp: 4;
 			-webkit-box-orient: vertical;
 			overflow: hidden;
+			max-width: 62ch;
 			font-size: 0.9rem;
-			margin-top: 16px;
+			margin-top: 14px;
+		}
+
+		/* Celular: a sinopse mostra quantas linhas a altura da tela comporta */
+		@media (max-width: 600px) {
+			.saga-synopsis {
+				-webkit-line-clamp: 3;
+				font-size: 0.86rem;
+				line-height: 1.55;
+			}
+		}
+
+		@media (max-width: 600px) and (min-height: 620px) {
+			.saga-synopsis {
+				-webkit-line-clamp: 4;
+			}
+		}
+
+		@media (max-width: 600px) and (min-height: 760px) {
+			.saga-synopsis {
+				-webkit-line-clamp: 6;
+			}
+		}
+
+		@media (min-width: 601px) and (min-height: 900px) {
+			.saga-synopsis {
+				-webkit-line-clamp: 6;
+				font-size: 1rem;
+			}
+		}
+
+		/* Celular deitado: pouca altura, então texto à esquerda e fio à direita */
+		@media (orientation: landscape) and (max-height: 560px) {
+			.saga-card {
+				flex-direction: row;
+				align-items: center;
+				padding-block: clamp(12px, 3svh, 20px);
+			}
+
+			.saga-copy {
+				order: -1;
+				flex: 0 0 42%;
+				align-self: center;
+				max-height: 100%;
+			}
+
+			.sg-stage {
+				flex: 1 1 0;
+				align-self: stretch;
+				height: auto;
+				margin: 0 calc(var(--gutter) * -1) 0 0;
+				-webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 90%, transparent 100%);
+				mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 90%, transparent 100%);
+			}
+
+			.saga-title {
+				font-size: clamp(1.6rem, 5vw, 2.6rem);
+			}
+
+			.saga-synopsis {
+				-webkit-line-clamp: 3;
+				margin-top: 10px;
+			}
 		}
 
 		.saga-shade {
@@ -3522,6 +3650,208 @@ const fontFaces = `
 		window.addEventListener('resize', schedule);
 		update();
 
+		// 3b · Prólogo "Fenda": o filme vaza pelas letras vazadas onde o cursor abre a fenda
+		//      (design system: hero-word-reveal + image-text). Sem mouse, a fenda vagueia sozinha.
+		const rift = story.querySelector<HTMLCanvasElement>('[data-rift]');
+		const riftLines = [...story.querySelectorAll<HTMLElement>('[data-rift-line]')];
+		const rctx = rift?.getContext('2d');
+		if (rift && rctx && riftLines.length && !reduce) {
+			const finePointer = window.matchMedia('(pointer: fine)');
+			const DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+			const mask = document.createElement('canvas');
+			const mctx = mask.getContext('2d')!;
+			let visible = false;
+			let raf = 0;
+			let lastMove = -1e9;
+			const mouse = { x: 0, y: 0 };
+			// a = cabeça da fenda, b = cauda (atrasada): juntas formam uma bolha que estica ao mover
+			const a = { x: -999, y: -999 };
+			const b = { x: -999, y: -999 };
+			let r = 0;
+
+			window.addEventListener(
+				'pointermove',
+				(e) => {
+					if (e.pointerType !== 'mouse') return;
+					mouse.x = e.clientX;
+					mouse.y = e.clientY;
+					lastMove = performance.now();
+				},
+				{ passive: true },
+			);
+
+			const fit = () => {
+				const w = Math.round(rift.clientWidth * DPR);
+				const h = Math.round(rift.clientHeight * DPR);
+				if (rift.width !== w || rift.height !== h) {
+					rift.width = w;
+					rift.height = h;
+				}
+			};
+
+			// Desenha o quadro do rolo no ar (object-fit: cover, object-position 50% 55%) e recorta nas letras,
+			// com a mesma fonte e as mesmas métricas do HTML: o preenchimento casa com o contorno
+			const draw = (box: DOMRect) => {
+				const v = videos.find((x) => x.classList.contains('is-on')) ?? video;
+				rctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+				rctx.globalCompositeOperation = 'source-over';
+				rctx.clearRect(0, 0, box.width, box.height);
+				if (v.readyState < 2 || !v.videoWidth) return;
+				// 1) máscara com as letras (todas as linhas num canvas à parte)
+				if (mask.width !== rift.width || mask.height !== rift.height) {
+					mask.width = rift.width;
+					mask.height = rift.height;
+				}
+				mctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+				mctx.clearRect(0, 0, box.width, box.height);
+				mctx.fillStyle = '#fff';
+				riftLines.forEach((line) => {
+					const cs = getComputedStyle(line);
+					const lr = line.getBoundingClientRect();
+					const size = parseFloat(cs.fontSize);
+					mctx.font = `${cs.fontWeight} ${size}px ${cs.fontFamily}`;
+					if ('letterSpacing' in mctx) (mctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = cs.letterSpacing === 'normal' ? '0px' : cs.letterSpacing;
+					const text = (line.textContent ?? '').toUpperCase();
+					const m = mctx.measureText(text);
+					const lh = parseFloat(cs.lineHeight) || size * 0.9;
+					const asc = m.fontBoundingBoxAscent ?? size * 0.8;
+					const desc = m.fontBoundingBoxDescent ?? size * 0.2;
+					const base = lr.top - box.top + (lh - (asc + desc)) / 2 + asc;
+					mctx.fillText(text, lr.left - box.left, base);
+				});
+				// 2) o quadro do vídeo, clareado
+				const vr = v.getBoundingClientRect();
+				const s = Math.max(vr.width / v.videoWidth, vr.height / v.videoHeight);
+				const dw = v.videoWidth * s;
+				const dh = v.videoHeight * s;
+				rctx.filter = 'brightness(2.4) contrast(1.25) saturate(1.3)';
+				rctx.drawImage(v, vr.left + (vr.width - dw) * 0.5 - box.left, vr.top + (vr.height - dh) * 0.55 - box.top, dw, dh);
+				rctx.filter = 'none';
+				// 3) energia: 'screen' ergue as sombras para ácido → branco sem apagar o detalhe da imagem
+				const g = rctx.createLinearGradient(0, 0, 0, box.height);
+				g.addColorStop(0, 'rgba(255, 254, 242, 0.42)');
+				g.addColorStop(0.55, 'rgba(204, 255, 0, 0.5)');
+				g.addColorStop(1, 'rgba(255, 51, 0, 0.32)');
+				rctx.globalCompositeOperation = 'screen';
+				rctx.fillStyle = g;
+				rctx.fillRect(0, 0, box.width, box.height);
+				// 4) recorta tudo nas letras de uma vez
+				rctx.globalCompositeOperation = 'destination-in';
+				rctx.setTransform(1, 0, 0, 1, 0, 0);
+				rctx.drawImage(mask, 0, 0);
+			};
+
+			const tick = (now: number) => {
+				raf = 0;
+				if (!visible) return;
+				const box = rift.getBoundingClientRect();
+				fit();
+				const intro = parseFloat(story.style.getPropertyValue('--intro')) || 0;
+				const size = parseFloat(getComputedStyle(riftLines[0]).fontSize);
+				const following = finePointer.matches && now - lastMove < 2600;
+				let tx: number;
+				let ty: number;
+				let open: number;
+				if (following) {
+					tx = mouse.x - box.left;
+					ty = mouse.y - box.top;
+					// abre perto do título, fecha longe dele
+					const dx = Math.max(0, Math.abs(tx - box.width / 2) - box.width / 2);
+					const dy = Math.max(0, Math.abs(ty - box.height / 2) - box.height / 2);
+					open = Math.max(0, 1 - Math.hypot(dx, dy) / (size * 1.6));
+				} else {
+					// vagueia em Lissajous só sobre a área ocupada pelas duas linhas vazadas
+					const t = now / 1000;
+					const lrs = riftLines.map((l) => l.getBoundingClientRect());
+					const L = Math.min(...lrs.map((q) => q.left)) - box.left;
+					const R = Math.max(...lrs.map((q) => q.right)) - box.left;
+					const T = Math.min(...lrs.map((q) => q.top)) - box.top;
+					const B = Math.max(...lrs.map((q) => q.bottom)) - box.top;
+					tx = L + (R - L) * (0.5 + 0.42 * Math.sin(t * 0.41));
+					ty = T + (B - T) * (0.5 + 0.34 * Math.sin(t * 0.67 + 1.3));
+					open = 0.82 + 0.18 * Math.sin(t * 1.7);
+				}
+				if (a.x < -900) {
+					a.x = b.x = tx;
+					a.y = b.y = ty;
+				}
+				a.x += (tx - a.x) * 0.16;
+				a.y += (ty - a.y) * 0.16;
+				b.x += (a.x - b.x) * 0.07;
+				b.y += (a.y - b.y) * 0.07;
+				const target = size * 1.45 * open * (1 - Math.min(1, intro * 1.4));
+				r += (target - r) * 0.1;
+
+				rift.style.setProperty('--ax', `${a.x.toFixed(1)}px`);
+				rift.style.setProperty('--ay', `${a.y.toFixed(1)}px`);
+				rift.style.setProperty('--bx', `${b.x.toFixed(1)}px`);
+				rift.style.setProperty('--by', `${b.y.toFixed(1)}px`);
+				rift.style.setProperty('--rr', `${r.toFixed(1)}px`);
+				if (r > 1) draw(box);
+				raf = requestAnimationFrame(tick);
+			};
+
+			new IntersectionObserver(([entry]) => {
+				visible = entry.isIntersecting;
+				if (visible && !raf) raf = requestAnimationFrame(tick);
+			}).observe(rift);
+			document.addEventListener('visibilitychange', () => {
+				visible = !document.hidden && rift.getBoundingClientRect().bottom > 0;
+				if (visible && !raf) raf = requestAnimationFrame(tick);
+			});
+		}
+
+		// 3c · "Está sendo reescrito.": de tempos em tempos a frase é reescrita diante de você
+		//      (apagado / podado / condenado) e volta, letra por letra, ao texto original
+		const rewrite = story.querySelector<HTMLElement>('[data-rewrite]');
+		if (rewrite && !reduce) {
+			const ORIGINAL = rewrite.textContent ?? '';
+			const VARIANTS = ['Está sendo apagado.', 'Está sendo podado.', 'Está sendo condenado.'];
+			const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&/<>0123456789';
+			const sleep = (ms: number) => new Promise<void>((res) => window.setTimeout(res, ms));
+			const scramble = (to: string, ms: number) =>
+				new Promise<void>((res) => {
+					const from = rewrite.textContent ?? '';
+					const len = Math.max(from.length, to.length);
+					const t0 = performance.now();
+					const step = () => {
+						const k = Math.min(1, (performance.now() - t0) / ms);
+						let out = '';
+						for (let i = 0; i < len; i++) {
+							const lock = (i + 1) / len <= k; // trava da esquerda para a direita
+							const ch = to[i] ?? '';
+							if (lock) out += ch;
+							else if (ch === ' ' || ch === '.') out += ch;
+							else out += GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+						}
+						rewrite.textContent = out.trimEnd();
+						if (k < 1) window.setTimeout(step, 45);
+						else {
+							rewrite.textContent = to;
+							res();
+						}
+					};
+					step();
+				});
+			const onScreen = () => !document.hidden && (parseFloat(story.style.getPropertyValue('--intro')) || 0) < 0.6;
+			let v = 0;
+			(async () => {
+				await sleep(4200);
+				for (;;) {
+					if (onScreen()) {
+						rewrite.classList.add('is-rewriting');
+						await scramble(VARIANTS[v++ % VARIANTS.length], 650);
+						rewrite.classList.remove('is-rewriting');
+						await sleep(1300);
+						rewrite.classList.add('is-rewriting');
+						await scramble(ORIGINAL, 800);
+						rewrite.classList.remove('is-rewriting');
+					}
+					await sleep(6500);
+				}
+			})();
+		}
+
 		// 4 · Vídeo controlado pela rolagem (scrub) com suavização — só busca um quadro novo quando o anterior terminou
 		// Projetor: um rolo por vez, sempre o do trecho rolado (a ordem nunca se perde)
 		let onAir = 0;
@@ -3962,6 +4292,120 @@ const fontFaces = `
 		window.addEventListener('resize', fitTitle);
 		document.fonts?.ready.then(fitTitle);
 
+		// Névoa "mist" do design system (FadeContent: ruído fractal + limiar + desfoque), com três desvios:
+		// 1) a frente da névoa sai do fio (direita no computador, topo no celular): o fio "expira" o texto;
+		// 2) na borda da frente as letras condensam como vapor ionizado ácido e esfriam até o branco;
+		// 3) o ruído é esticado na horizontal (fiapos) e se revolve enquanto condensa.
+		// Na troca de filme o caminho inverte: o texto antigo é tragado de volta para o fio.
+		const SVG_NS = 'http://www.w3.org/2000/svg';
+		const MIST_LEVELS = Array.from({ length: 33 }, (_, k) => k / 32);
+		const MIST_EDGE = 0.16;
+		const smooth = (a: number, b: number, v: number) => ease(clamp01((v - a) / (b - a)));
+		const ramp = (x1: number, y1: number, x2: number, y2: number) =>
+			`data:image/svg+xml,${encodeURIComponent(
+				`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" preserveAspectRatio="none"><linearGradient id="r" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#fff"/></linearGradient><rect width="100" height="100" fill="url(#r)"/></svg>`,
+			)}`;
+		// 0 (preto) no lado do fio, 1 no lado oposto: a névoa revela primeiro o que está mais perto do fio
+		const RAMP_FROM_RIGHT = ramp(1, 0, 0, 0);
+		const RAMP_FROM_TOP = ramp(0, 0, 0, 1);
+		let mistCount = 0;
+
+		const createMist = (target: HTMLElement) => {
+			const el = (name: string, attrs: Record<string, string | number>, parent: Element) => {
+				const node = document.createElementNS(SVG_NS, name);
+				Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, String(v)));
+				parent.appendChild(node);
+				return node;
+			};
+			const svg = el('svg', { width: 0, height: 0, 'aria-hidden': 'true' }, document.body);
+			(svg as SVGElement).style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
+			const id = `saga-mist-${(mistCount += 1)}`;
+			const f = el('filter', { id, x: '-12%', y: '-30%', width: '124%', height: '160%', 'color-interpolation-filters': 'sRGB' }, svg);
+			const turb = el('feTurbulence', { type: 'fractalNoise', baseFrequency: '0.011 0.04', numOctaves: 3, seed: 1, result: 'noise' }, f);
+			el('feColorMatrix', { in: 'noise', type: 'matrix', values: '1.43 0 0 0 -0.21 1.43 0 0 0 -0.21 1.43 0 0 0 -0.21 0 0 0 0 1', result: 'n' }, f);
+			const img = el('feImage', { preserveAspectRatio: 'none', result: 'g' }, f);
+			el('feComposite', { in: 'n', in2: 'g', operator: 'arithmetic', k1: 0, k2: 0.56, k3: 0.44, k4: 0, result: 'lvl' }, f);
+			el('feColorMatrix', { in: 'lvl', type: 'matrix', values: '0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0', result: 'a' }, f);
+			const fill = el('feFuncA', { type: 'table' }, el('feComponentTransfer', { in: 'a', result: 'mask' }, f));
+			const band = el('feFuncA', { type: 'table' }, el('feComponentTransfer', { in: 'a', result: 'band' }, f));
+			el('feComposite', { in: 'SourceGraphic', in2: 'mask', operator: 'in', result: 'text' }, f);
+			el('feFlood', { 'flood-color': '#ccff00', result: 'acid' }, f);
+			el('feComposite', { in: 'acid', in2: 'band', operator: 'in', result: 'acidBand' }, f);
+			el('feComposite', { in: 'acidBand', in2: 'SourceAlpha', operator: 'in', result: 'ion' }, f);
+			el('feGaussianBlur', { in: 'ion', stdDeviation: 4, result: 'ionGlow' }, f);
+			const merge = el('feMerge', {}, f);
+			['ionGlow', 'text', 'ion'].forEach((k) => el('feMergeNode', { in: k }, merge));
+
+			let p = 0;
+			let raf = 0;
+			let settle: (() => void) | null = null;
+			let fromTop = mobile.matches;
+
+			const render = (t: number) => {
+				if (p >= 1) {
+					target.style.filter = '';
+					target.style.transform = '';
+					target.dataset.mist = 'shown';
+					return;
+				}
+				target.dataset.mist = p <= 0 ? 'hidden' : 'forming';
+				const front = p * (1 + 2 * MIST_EDGE) - MIST_EDGE;
+				const fade = Math.min(1, (1 - p) * 3);
+				fill.setAttribute('tableValues', MIST_LEVELS.map((l) => (1 - smooth(front - MIST_EDGE, front + MIST_EDGE, l)).toFixed(3)).join(' '));
+				band.setAttribute('tableValues', MIST_LEVELS.map((l) => (Math.exp(-(((l - front) / (MIST_EDGE * 0.8)) ** 2)) * fade).toFixed(3)).join(' '));
+				// a névoa se revolve: a frequência do ruído "respira" enquanto o texto condensa
+				turb.setAttribute('baseFrequency', `${(0.011 + Math.sin(t / 260) * 0.0016).toFixed(4)} ${(0.04 + Math.cos(t / 340) * 0.005).toFixed(4)}`);
+				const drift = (1 - p) ** 2;
+				target.style.filter = `url(#${id}) blur(${(9 * (1 - p)).toFixed(2)}px)`;
+				target.style.transform = fromTop ? `translate3d(0, ${(-14 * drift).toFixed(1)}px, 0)` : `translate3d(${(22 * drift).toFixed(1)}px, 0, 0)`;
+			};
+
+			// to: 1 condensa · 0 dissipa (volta para o fio). Interrompível: parte de onde a névoa estiver.
+			const run = (to: 0 | 1, ms: number, delay = 0) =>
+				new Promise<void>((resolve) => {
+					cancelAnimationFrame(raf);
+					settle?.();
+					settle = resolve;
+					fromTop = mobile.matches;
+					img.setAttribute('href', fromTop ? RAMP_FROM_TOP : RAMP_FROM_RIGHT);
+					if (to === 1 && p <= 0) turb.setAttribute('seed', String(1 + Math.floor(Math.random() * 999)));
+					const from = p;
+					const span = ms * Math.abs(to - from);
+					const t0 = performance.now() + delay;
+					const step = (now: number) => {
+						const k = span <= 0 ? 1 : clamp01((now - t0) / span);
+						// entrada desacelera (condensa devagar no fim); saída acelera (é tragada)
+						const e = to === 1 ? 1 - (1 - k) ** 3 : k * k;
+						p = from + (to - from) * e;
+						render(now);
+						if (k < 1) raf = requestAnimationFrame(step);
+						else {
+							settle = null;
+							resolve();
+						}
+					};
+					raf = requestAnimationFrame(step);
+				});
+
+			const hide = () => {
+				cancelAnimationFrame(raf);
+				p = 0;
+				render(0);
+			};
+			return { run, hide };
+		};
+
+		const mists = !reduce && titleEl && synopsis ? { title: createMist(titleEl), synopsis: createMist(synopsis) } : null;
+		let revealed = false;
+		let swapGen = 0;
+		const mistIn = () => {
+			if (!mists) return;
+			mists.title.run(1, 1500);
+			mists.synopsis.run(1, 1700, 220);
+		};
+		mists?.title.hide();
+		mists?.synopsis.hide();
+
 		const go = (i: number) => {
 			if (i === index) return;
 			const first = index === -1;
@@ -3984,16 +4428,26 @@ const fontFaces = `
 				if (chapter) chapter.textContent = `Capítulo ${d.n}`;
 				copy?.classList.remove('is-swapping');
 			};
-			if (first || reduce) apply();
+			if (first || !mists) apply();
+			else if (!revealed) apply(); // ainda fora da tela: troca direto, a névoa entra quando a seção aparecer
 			else {
+				const gen = ++swapGen;
 				copy?.classList.add('is-swapping');
-				window.setTimeout(apply, 320);
+				// o texto antigo é tragado para o fio; só então o novo condensa
+				Promise.all([mists.title.run(0, 420), mists.synopsis.run(0, 360)]).then(() => {
+					if (gen !== swapGen) return;
+					apply();
+					mistIn();
+				});
 			}
 		};
 
 		// Progresso da rolagem → posição da câmera no fio (unidades do mundo).
 		// A câmera "repousa" em cada nó por um trecho e viaja entre eles com easing.
 		const LEAD = 700;
+		// Trecho do fio visível na tela (unidades do mundo): a carga da reprodução automática o percorre
+		let viewL = 0;
+		let viewR = 0;
 		// Ligado mais abaixo: a reprodução automática acompanha se o palco está fixo na tela
 		let syncAuto: (pinned: boolean) => void = () => {};
 		// Ligado mais abaixo: no último filme (Doomsday), segue sozinho para o trailer
@@ -4017,7 +4471,10 @@ const fontFaces = `
 				year = years[total - 1];
 			} else {
 				const b = Math.floor(u);
-				const e = ease(clamp01((u - b - 0.2) / 0.6));
+				// Tela estreita: a distância entre nós passa da largura do palco, então a viagem é mais curta
+				// e a câmera repousa mais em cada filme (o pôster ativo não fica cortado na borda)
+				const [t0, tw] = mobile.matches ? [0.32, 0.36] : [0.2, 0.6];
+				const e = ease(clamp01((u - b - t0) / tw));
 				cam = nodeX[b] + (nodeX[b + 1] - nodeX[b]) * e;
 				year = years[b] + (years[b + 1] - years[b]) * e;
 			}
@@ -4027,6 +4484,8 @@ const fontFaces = `
 				const s = stage.clientHeight / 1000;
 				const focus = stage.clientWidth * (mobile.matches ? 0.5 : 0.62);
 				track.style.setProperty('--tx', `${(focus - cam * s).toFixed(1)}px`);
+				viewL = cam - focus / s;
+				viewR = cam + (stage.clientWidth - focus) / s;
 			}
 
 			// Variantes: crescem à frente da câmera, são podadas depois que ela passa
@@ -4086,37 +4545,33 @@ const fontFaces = `
 		let autoSince = 0;
 		let autoIndex = 0;
 
-		// Carga no fio: comprimento do fio em cada nó (busca binária pelo x), calculado uma vez
+		// Carga no fio: varre o trecho visível, da borda esquerda da tela até a direita
 		const chargeSvg = saga.querySelector<SVGSVGElement>('[data-sg-charge]');
 		const chargeTrail = chargeSvg?.querySelector<SVGPathElement>('.sg-charge-trail') ?? null;
 		const chargeHead = chargeSvg?.querySelector<SVGCircleElement>('.sg-charge-head') ?? null;
-		let nodeLens: number[] | null = null;
 		let trailLen = 0;
-		const lensOf = () => {
-			if (nodeLens || !chargeTrail) return nodeLens;
-			trailLen = chargeTrail.getTotalLength();
-			nodeLens = nodeX.map((x) => {
-				let lo = 0;
-				let hi = trailLen;
-				for (let k = 0; k < 24; k++) {
-					const mid = (lo + hi) / 2;
-					if (chargeTrail.getPointAtLength(mid).x < x) lo = mid;
-					else hi = mid;
-				}
-				return (lo + hi) / 2;
-			});
-			return nodeLens;
+		// Comprimento do fio no ponto x (o fio é desenhado da esquerda para a direita): busca binária
+		const lenAtX = (x: number) => {
+			if (!chargeTrail) return 0;
+			if (!trailLen) trailLen = chargeTrail.getTotalLength();
+			let lo = 0;
+			let hi = trailLen;
+			for (let k = 0; k < 22; k++) {
+				const mid = (lo + hi) / 2;
+				if (chargeTrail.getPointAtLength(mid).x < x) lo = mid;
+				else hi = mid;
+			}
+			return (lo + hi) / 2;
 		};
 		let chargeRaf = 0;
 		let chargeStart = 0;
 		let chargeFrom = 0;
 		const paintCharge = (t: number) => {
 			films[chargeFrom]?.style.setProperty('--auto', t.toFixed(4));
-			const lens = lensOf();
-			if (!lens || !chargeTrail || !chargeHead) return;
-			const a = lens[chargeFrom];
-			const b = lens[Math.min(total - 1, chargeFrom + 1)];
-			const L = a + (b - a) * t;
+			if (!chargeTrail || !chargeHead) return;
+			// Recalcula a cada quadro: acompanha a câmera enquanto ela ainda desliza até o nó
+			const a = lenAtX(viewL);
+			const L = a + (lenAtX(viewR) - a) * t;
 			chargeTrail.style.strokeDasharray = `0 ${a.toFixed(1)} ${(L - a).toFixed(1)} ${trailLen.toFixed(1)}`;
 			const pt = chargeTrail.getPointAtLength(L);
 			chargeHead.setAttribute('cx', pt.x.toFixed(1));
@@ -4242,6 +4697,10 @@ const fontFaces = `
 			([entry]) => {
 				inView = entry.isIntersecting;
 				if (inView) saga.classList.add('is-in');
+				if (inView && !revealed) {
+					revealed = true;
+					mistIn();
+				}
 				// Saiu da seção: a reprodução automática volta a valer na próxima visita
 				else if (autoState !== 'idle') stopAuto('idle');
 			},
